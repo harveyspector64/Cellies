@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARD</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    cursor: default;
+    user-select: none;
+  }
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+  }
+  #ui-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #menu-screen {
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 40px 60px;
+    background: rgba(10, 10, 10, 0.95);
+    border: 2px solid #3a2a1a;
+    position: relative;
+  }
+  #menu-screen::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid #2a1a0a;
+    pointer-events: none;
+  }
+  #menu-screen h1 {
+    font-size: 48px;
+    color: #c4843a;
+    text-shadow: 3px 3px 0 #1a0a00, -1px -1px 0 #5a3a1a;
+    letter-spacing: 12px;
+    margin-bottom: 8px;
+  }
+  #menu-screen .subtitle {
+    font-size: 8px;
+    color: #6a5a4a;
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+  }
+  .menu-btn {
+    pointer-events: all;
+    background: #1a1208;
+    border: 1px solid #3a2a1a;
+    color: #c4943a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    padding: 14px 32px;
+    cursor: pointer;
+    width: 260px;
+    text-align: center;
+    transition: all 0.1s;
+    letter-spacing: 1px;
+  }
+  .menu-btn:hover {
+    background: #2a1a0a;
+    border-color: #c4943a;
+    color: #ffd080;
+    transform: scale(1.02);
+  }
+  .menu-btn:active { transform: scale(0.98); }
+  .menu-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .menu-section-title {
+    font-size: 7px;
+    color: #5a4a3a;
+    letter-spacing: 3px;
+    margin-bottom: 2px;
+  }
+  .gang-select {
+    display: flex;
+    gap: 8px;
+    pointer-events: all;
+  }
+  .gang-btn {
+    pointer-events: all;
+    width: 48px;
+    height: 48px;
+    border: 2px solid #333;
+    background: #111;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transition: all 0.1s;
+    position: relative;
+  }
+  .gang-btn.selected { border-color: #ffd080; box-shadow: 0 0 8px rgba(255,208,128,0.3); }
+  .gang-btn:hover { border-color: #888; }
+  .gang-btn .gang-color {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #555;
+  }
+  .gang-btn .gang-label {
+    font-size: 5px;
+    color: #888;
+    margin-top: 3px;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .controls-info {
+    font-size: 6px;
+    color: #4a3a2a;
+    line-height: 1.8;
+    text-align: center;
+    margin-top: 16px;
+    letter-spacing: 1px;
+  }
+  .controls-info span { color: #8a7a5a; }
+  .trait-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 130px;
+    pointer-events: all;
+  }
+  .trait-label {
+    font-size: 6px;
+    color: #8a7a5a;
+    font-family: 'Press Start 2P', monospace;
+    width: 28px;
+  }
+  .trait-val {
+    font-size: 6px;
+    color: #c4943a;
+    font-family: 'Press Start 2P', monospace;
+    width: 14px;
+    text-align: right;
+  }
+  .trait-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 70px;
+    height: 6px;
+    background: #1a1208;
+    border: 1px solid #3a2a1a;
+    outline: none;
+    cursor: pointer;
+  }
+  .trait-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 8px;
+    height: 12px;
+    background: #c4943a;
+    border: none;
+    cursor: pointer;
+  }
+  .trait-slider::-moz-range-thumb {
+    width: 8px;
+    height: 12px;
+    background: #c4943a;
+    border: none;
+    cursor: pointer;
+  }
+  #hud {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    display: none;
+  }
+  #pause-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    pointer-events: all;
+    z-index: 100;
+  }
+  #pause-overlay .pause-text {
+    font-size: 24px;
+    color: #c4943a;
+    letter-spacing: 6px;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="ui-overlay">
+  <div id="menu-screen">
+    <h1>YARD</h1>
+    <div class="subtitle">CALIFORNIA STATE PENITENTIARY</div>
+    <div class="menu-section">
+      <div class="menu-section-title">SELECT YOUR SET</div>
+      <div class="gang-select" id="gang-select">
+        <div class="gang-btn selected" data-gang="surenos" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#2a4a9a"></div>
+          <div class="gang-label">SUR 13</div>
+        </div>
+        <div class="gang-btn" data-gang="woods" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#8a8a7a"></div>
+          <div class="gang-label">WOODS</div>
+        </div>
+        <div class="gang-btn" data-gang="bgf" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#2a6a3a"></div>
+          <div class="gang-label">RIDERS</div>
+        </div>
+        <div class="gang-btn" data-gang="nortenos" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#9a2a2a"></div>
+          <div class="gang-label">XIV</div>
+        </div>
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">GAME MODE</div>
+      <button class="menu-btn" onclick="startGame('1v1')">1 V 1 &nbsp; FIGHT</button>
+      <button class="menu-btn" onclick="startGame('cell')">CELL &nbsp; FIGHT</button>
+      <button class="menu-btn" onclick="startGame('riot')">YARD &nbsp; RIOT</button>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">BUILD YOUR FIGHTER</div>
+      <div id="trait-builder" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:280px;">
+        <div class="trait-row" data-trait="aggression">
+          <span class="trait-label">AGG</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+        <div class="trait-row" data-trait="toughness">
+          <span class="trait-label">TGH</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+        <div class="trait-row" data-trait="speed">
+          <span class="trait-label">SPD</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+        <div class="trait-row" data-trait="power">
+          <span class="trait-label">PWR</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+      </div>
+      <div id="trait-points" style="font-size:6px;color:#8a7a5a;letter-spacing:1px;">POINTS: 28 / 28</div>
+      <div id="trait-archetype" style="font-size:5px;color:#5a4a3a;letter-spacing:1px;">STYLE: BALANCED</div>
+    </div>
+    <div class="controls-info">
+      <span>WASD</span> MOVE &nbsp;&middot;&nbsp; <span>J</span> JAB &nbsp;&middot;&nbsp; <span>K</span> HOOK &nbsp;&middot;&nbsp; <span>H/SPACE</span> SHOVE<br>
+      <span>L</span> BLOCK &nbsp;&middot;&nbsp; <span>S</span> SLIP &nbsp;&middot;&nbsp; <span>ESC</span> PAUSE &nbsp;&middot;&nbsp; <span>R</span> RESTART &nbsp;&middot;&nbsp; <span>Q</span> MENU
+    </div>
+  </div>
+</div>
+
+<div id="hud"></div>
+
+<div id="pause-overlay">
+  <div class="pause-text">PAUSED</div>
+  <button class="menu-btn" onclick="resumeGame()">RESUME</button>
+  <button class="menu-btn" onclick="quitToMenu()">QUIT</button>
+</div>
+
+<!-- JS Modules — load order matters (dependency chain) -->
+<script src="js/constants.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/input.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/fighter.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/gang.js"></script>
+<script src="js/environment.js"></script>
+<script src="js/spectator.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
