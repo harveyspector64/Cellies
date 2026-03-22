@@ -139,6 +139,57 @@
     letter-spacing: 1px;
   }
   .controls-info span { color: #8a7a5a; }
+  .cfg-btn {
+    pointer-events: all;
+    background: #1a1208;
+    border: 1px solid #3a2a1a;
+    color: #8a7a5a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .cfg-btn:hover { border-color: #8a7a5a; color: #c4943a; }
+  .cfg-btn.selected { border-color: #c4943a; color: #ffd080; background: #2a1a0a; }
+  .cfg-btn-sm {
+    pointer-events: all;
+    background: #1a1208;
+    border: 1px solid #3a2a1a;
+    color: #c4943a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cfg-btn-sm:hover { border-color: #c4943a; background: #2a1a0a; }
+  .enemy-team-row {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    pointer-events: all;
+  }
+  .enemy-team-row .gang-chip {
+    font-size: 5px;
+    padding: 3px 6px;
+    border: 1px solid #3a2a1a;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .enemy-team-row .gang-chip:hover { border-color: #888; }
+  .enemy-team-row .gang-chip.active { border-color: #c4943a; }
+  .enemy-team-row .remove-btn {
+    font-size: 6px;
+    color: #cc4422;
+    cursor: pointer;
+    padding: 2px 4px;
+    border: 1px solid transparent;
+  }
+  .enemy-team-row .remove-btn:hover { border-color: #cc4422; }
   .trait-row {
     display: flex;
     align-items: center;
@@ -241,11 +292,38 @@
         </div>
       </div>
     </div>
-    <div class="menu-section">
-      <div class="menu-section-title">GAME MODE</div>
+    <div class="menu-section" id="quickstart-section">
+      <div class="menu-section-title">QUICK START</div>
       <button class="menu-btn" onclick="startGame('1v1')">1 V 1 &nbsp; FIGHT</button>
       <button class="menu-btn" onclick="startGame('cell')">CELL &nbsp; FIGHT</button>
       <button class="menu-btn" onclick="startGame('riot')">YARD &nbsp; RIOT</button>
+      <button class="menu-btn" onclick="startTournament()">⚔ &nbsp; TOURNAMENT</button>
+      <button class="menu-btn" onclick="toggleCustom()" id="custom-toggle-btn" style="border-color:#5a4a3a;color:#8a7a5a;">CUSTOM &nbsp; FIGHT &nbsp; ▼</button>
+    </div>
+    <div class="menu-section" id="custom-panel" style="display:none;">
+      <div class="menu-section-title">CUSTOM FIGHT SETUP</div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+          <div style="font-size:5px;color:#5a4a3a;letter-spacing:1px;">ARENA</div>
+          <div style="display:flex;gap:4px;" id="arena-select">
+            <button class="cfg-btn selected" data-arena="yard" onclick="selectArena(this)">YARD</button>
+            <button class="cfg-btn" data-arena="cell" onclick="selectArena(this)">CELL</button>
+          </div>
+          <div style="font-size:5px;color:#5a4a3a;letter-spacing:1px;margin-top:6px;">YOUR CREW</div>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <button class="cfg-btn-sm" onclick="adjustCrew(-1)">-</button>
+            <span id="crew-count" style="font-size:7px;color:#c4943a;width:20px;text-align:center;">1</span>
+            <button class="cfg-btn-sm" onclick="adjustCrew(1)">+</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+          <div style="font-size:5px;color:#5a4a3a;letter-spacing:1px;">ENEMY TEAMS</div>
+          <div id="enemy-teams" style="display:flex;flex-direction:column;gap:3px;max-height:80px;overflow-y:auto;"></div>
+          <button class="cfg-btn" onclick="addEnemyTeam()" id="add-team-btn" style="font-size:5px;">+ ADD GANG</button>
+        </div>
+      </div>
+      <div id="custom-summary" style="font-size:5px;color:#6a5a4a;letter-spacing:1px;margin-top:4px;"></div>
+      <button class="menu-btn" onclick="startCustomGame()" style="margin-top:4px;">START &nbsp; CUSTOM &nbsp; FIGHT</button>
     </div>
     <div class="menu-section">
       <div class="menu-section-title">BUILD YOUR FIGHTER</div>
@@ -285,8 +363,8 @@
 
 <div id="pause-overlay">
   <div class="pause-text">PAUSED</div>
-  <button class="menu-btn" onclick="resumeGame()">RESUME</button>
-  <button class="menu-btn" onclick="quitToMenu()">QUIT</button>
+  <button class="menu-btn" onclick="resumeGame()">RESUME &nbsp; <span style="font-size:8px;color:#6a5a4a;">[ESC]</span></button>
+  <button class="menu-btn" onclick="quitToMenu()">QUIT &nbsp; <span style="font-size:8px;color:#6a5a4a;">[ENTER]</span></button>
 </div>
 
 <!-- JS Modules — load order matters (dependency chain) -->
@@ -303,6 +381,7 @@
 <script src="js/gang.js"></script>
 <script src="js/environment.js"></script>
 <script src="js/spectator.js"></script>
+<script src="js/tournament.js"></script>
 <script src="js/game.js"></script>
 <script src="js/main.js"></script>
 

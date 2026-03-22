@@ -139,6 +139,57 @@
     letter-spacing: 1px;
   }
   .controls-info span { color: #8a7a5a; }
+  .cfg-btn {
+    pointer-events: all;
+    background: #1a1208;
+    border: 1px solid #3a2a1a;
+    color: #8a7a5a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .cfg-btn:hover { border-color: #8a7a5a; color: #c4943a; }
+  .cfg-btn.selected { border-color: #c4943a; color: #ffd080; background: #2a1a0a; }
+  .cfg-btn-sm {
+    pointer-events: all;
+    background: #1a1208;
+    border: 1px solid #3a2a1a;
+    color: #c4943a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cfg-btn-sm:hover { border-color: #c4943a; background: #2a1a0a; }
+  .enemy-team-row {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    pointer-events: all;
+  }
+  .enemy-team-row .gang-chip {
+    font-size: 5px;
+    padding: 3px 6px;
+    border: 1px solid #3a2a1a;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .enemy-team-row .gang-chip:hover { border-color: #888; }
+  .enemy-team-row .gang-chip.active { border-color: #c4943a; }
+  .enemy-team-row .remove-btn {
+    font-size: 6px;
+    color: #cc4422;
+    cursor: pointer;
+    padding: 2px 4px;
+    border: 1px solid transparent;
+  }
+  .enemy-team-row .remove-btn:hover { border-color: #cc4422; }
   .trait-row {
     display: flex;
     align-items: center;
@@ -212,84 +263,10 @@
   }
 </style>
 </head>
-<body>
-
-<canvas id="game"></canvas>
-
-<div id="ui-overlay">
-  <div id="menu-screen">
-    <h1>YARD</h1>
-    <div class="subtitle">CALIFORNIA STATE PENITENTIARY</div>
-    <div class="menu-section">
-      <div class="menu-section-title">SELECT YOUR SET</div>
-      <div class="gang-select" id="gang-select">
-        <div class="gang-btn selected" data-gang="surenos" onclick="selectGang(this)">
-          <div class="gang-color" style="background:#2a4a9a"></div>
-          <div class="gang-label">SUR 13</div>
-        </div>
-        <div class="gang-btn" data-gang="woods" onclick="selectGang(this)">
-          <div class="gang-color" style="background:#8a8a7a"></div>
-          <div class="gang-label">WOODS</div>
-        </div>
-        <div class="gang-btn" data-gang="bgf" onclick="selectGang(this)">
-          <div class="gang-color" style="background:#2a6a3a"></div>
-          <div class="gang-label">RIDERS</div>
-        </div>
-        <div class="gang-btn" data-gang="nortenos" onclick="selectGang(this)">
-          <div class="gang-color" style="background:#9a2a2a"></div>
-          <div class="gang-label">XIV</div>
-        </div>
-      </div>
-    </div>
-    <div class="menu-section">
-      <div class="menu-section-title">GAME MODE</div>
-      <button class="menu-btn" onclick="startGame('1v1')">1 V 1 &nbsp; FIGHT</button>
-      <button class="menu-btn" onclick="startGame('cell')">CELL &nbsp; FIGHT</button>
-      <button class="menu-btn" onclick="startGame('riot')">YARD &nbsp; RIOT</button>
-    </div>
-    <div class="menu-section">
-      <div class="menu-section-title">BUILD YOUR FIGHTER</div>
-      <div id="trait-builder" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:280px;">
-        <div class="trait-row" data-trait="aggression">
-          <span class="trait-label">AGG</span>
-          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
-          <span class="trait-val">7</span>
-        </div>
-        <div class="trait-row" data-trait="toughness">
-          <span class="trait-label">TGH</span>
-          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
-          <span class="trait-val">7</span>
-        </div>
-        <div class="trait-row" data-trait="speed">
-          <span class="trait-label">SPD</span>
-          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
-          <span class="trait-val">7</span>
-        </div>
-        <div class="trait-row" data-trait="power">
-          <span class="trait-label">PWR</span>
-          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
-          <span class="trait-val">7</span>
-        </div>
-      </div>
-      <div id="trait-points" style="font-size:6px;color:#8a7a5a;letter-spacing:1px;">POINTS: 28 / 28</div>
-      <div id="trait-archetype" style="font-size:5px;color:#5a4a3a;letter-spacing:1px;">STYLE: BALANCED</div>
-    </div>
-    <div class="controls-info">
-      <span>WASD</span> MOVE &nbsp;&middot;&nbsp; <span>J</span> JAB &nbsp;&middot;&nbsp; <span>K</span> HOOK &nbsp;&middot;&nbsp; <span>H/SPACE</span> SHOVE<br>
-      <span>L</span> BLOCK &nbsp;&middot;&nbsp; <span>S</span> SLIP &nbsp;&middot;&nbsp; <span>ESC</span> PAUSE &nbsp;&middot;&nbsp; <span>R</span> RESTART &nbsp;&middot;&nbsp; <span>Q</span> MENU
-    </div>
-  </div>
-</div>
-
-<div id="hud"></div>
-
-<div id="pause-overlay">
-  <div class="pause-text">PAUSED</div>
-  <button class="menu-btn" onclick="resumeGame()">RESUME</button>
-  <button class="menu-btn" onclick="quitToMenu()">QUIT</button>
-</div>
 
 <script>
+// YARD — Constants & Configuration
+
 // ============================================================
 // CONSTANTS
 // ============================================================
@@ -471,6 +448,10 @@ const YARD_RIOT_W = 1100;
 const YARD_RIOT_H = 700;
 const YARD_CELL_W = 280;
 const YARD_CELL_H = 200;
+
+</script>
+<script>
+// YARD — Procedural Sound System (Web Audio API)
 
 const SFX = {
   ctx: null,
@@ -933,6 +914,10 @@ const SFX = {
   }
 };
 
+</script>
+<script>
+// YARD — Utilities, Assets & Character Definitions
+
 // ============================================================
 // GLOBALS
 // ============================================================
@@ -1087,6 +1072,10 @@ function getCharDef(gang) {
   return defs[Math.floor(Math.random() * defs.length)];
 }
 
+</script>
+<script>
+// YARD — Input System
+// ============================================================
 const input = {
   keys: {},
   justPressed: {},
@@ -1104,6 +1093,10 @@ const input = {
   clearFrame() { this.justPressed = {}; }
 };
 
+</script>
+<script>
+// YARD — Particle System
+// ============================================================
 class Particle {
   constructor(x, y, vx, vy, color, size, life, gravity = 0, friction = 0.98) {
     this.x = x; this.y = y;
@@ -1268,6 +1261,10 @@ class ParticleSystem {
   }
 }
 
+</script>
+<script>
+// YARD — Camera System
+// ============================================================
 class Camera {
   constructor() {
     this.x = 0; this.y = 0;
@@ -1371,6 +1368,10 @@ class Camera {
   }
 }
 
+</script>
+<script>
+// YARD — UI, HUD & Announcer
+
 // FLOATING DAMAGE NUMBERS — Phase 4
 // ============================================================
 class DamageNumberSystem {
@@ -1440,6 +1441,10 @@ class DamageNumberSystem {
 function drawHUD(ctx, mode) {
   if (mode === '1v1' || mode === 'cell') {
     draw1v1HUD(ctx);
+  } else if (mode === 'custom' && game && game.fighters.length === 2) {
+    draw1v1HUD(ctx);
+  } else if (mode === 'custom') {
+    drawCustomHUD(ctx);
   } else {
     drawRiotHUD(ctx);
   }
@@ -1588,6 +1593,107 @@ function draw1v1HUD(ctx) {
     if (p.knockdownCount > 0) ctx.fillText(`KD: ${p.knockdownCount}/${MAX_KNOCKDOWNS}`, 20, 75);
     ctx.textAlign = 'right';
     if (e.knockdownCount > 0) ctx.fillText(`KD: ${e.knockdownCount}/${MAX_KNOCKDOWNS}`, CANVAS_W - 20, 75);
+  }
+}
+
+function drawCustomHUD(ctx) {
+  if (!game || !game.player) return;
+  const p = game.player;
+
+  // Top bar
+  ctx.fillStyle = 'rgba(10,8,5,0.85)';
+  ctx.fillRect(0, 0, CANVAS_W, 52);
+  ctx.fillStyle = '#2a1a0a';
+  ctx.fillRect(0, 52, CANVAS_W, 2);
+
+  // Player health bar (left side)
+  const barW = 240;
+  const barH = 12;
+  const barY = 12;
+  const pPct = p.health / p.maxHealth;
+  const pBarX = 20;
+
+  ctx.fillStyle = '#1a1111';
+  ctx.fillRect(pBarX, barY, barW, barH);
+  const pColor = pPct > 0.5 ? '#44aa44' : pPct > 0.25 ? '#ccaa22' : '#cc2222';
+  ctx.fillStyle = pColor;
+  ctx.fillRect(pBarX, barY, barW * pPct, barH);
+  ctx.strokeStyle = '#3a2a1a';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pBarX, barY, barW, barH);
+
+  // Player name
+  ctx.fillStyle = '#c4943a';
+  ctx.font = '7px "Press Start 2P", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(p.name || 'YOU', pBarX, barY - 2);
+
+  // Stamina
+  const stBarH = 4;
+  const stBarY = barY + barH + 3;
+  const stPct = p.stamina / p.maxStamina;
+  ctx.fillStyle = '#1a1111';
+  ctx.fillRect(pBarX, stBarY, barW, stBarH);
+  ctx.fillStyle = stPct > 0.3 ? '#c4943a' : '#cc4422';
+  ctx.fillRect(pBarX, stBarY, barW * stPct, stBarH);
+
+  // Team status — right side
+  const allGangs = {};
+  for (const f of game.fighters) {
+    if (!allGangs[f.gangId]) allGangs[f.gangId] = { alive: 0, total: 0 };
+    allGangs[f.gangId].total++;
+    if (f.alive) allGangs[f.gangId].alive++;
+  }
+
+  let rx = CANVAS_W - 20;
+  ctx.font = '6px "Press Start 2P", monospace';
+  ctx.textAlign = 'right';
+
+  for (const gangId of Object.keys(allGangs)) {
+    const gc = GANG_COLORS[gangId];
+    if (!gc) continue;
+    const info = allGangs[gangId];
+    const isPlayer = gangId === game.playerGang;
+
+    ctx.fillStyle = isPlayer ? gc.light : (info.alive > 0 ? gc.primary : '#4a4a4a');
+    ctx.fillText(`${gc.name}: ${info.alive}/${info.total}`, rx, 16);
+    rx -= 0; // stack vertically instead
+    // Actually let's stack them
+  }
+
+  // Redo: stack gang statuses vertically on right
+  let gy = 10;
+  ctx.textAlign = 'right';
+  for (const gangId of Object.keys(allGangs)) {
+    const gc = GANG_COLORS[gangId];
+    if (!gc) continue;
+    const info = allGangs[gangId];
+    const isPlayer = gangId === game.playerGang;
+    ctx.fillStyle = info.alive > 0 ? gc.primary : '#4a4a4a';
+    const label = isPlayer ? `▶ ${gc.name}` : gc.name;
+    ctx.fillText(`${label}: ${info.alive}/${info.total}`, CANVAS_W - 15, gy);
+    gy += 12;
+  }
+
+  // Heat bar
+  if (p.heat > 0) {
+    const heatBarH = 3;
+    const heatBarY = stBarY + stBarH + 2;
+    const heatPct = p.heat / HEAT_MAX;
+    ctx.fillStyle = '#1a1111';
+    ctx.fillRect(pBarX, heatBarY, barW, heatBarH);
+    ctx.fillStyle = p.heat > 70 ? '#ff4400' : p.heat > 40 ? '#ff8800' : '#cc6600';
+    ctx.fillRect(pBarX, heatBarY, barW * heatPct, heatBarH);
+  }
+
+  // Combo counter
+  if (p.comboCount > 1) {
+    ctx.fillStyle = '#ffd080';
+    ctx.font = '14px "Press Start 2P", monospace';
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = clamp(p.comboTimer / 300, 0, 1);
+    ctx.fillText(`${p.comboCount} HIT`, 20, 70);
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -1783,6 +1889,10 @@ class Announcer {
     ctx.restore();
   }
 }
+
+</script>
+<script>
+// YARD — Fighter Class
 
 const STATES = {
   IDLE: 'idle',
@@ -3084,6 +3194,10 @@ class Fighter {
   }
 }
 
+</script>
+<script>
+// YARD — Collision & Combat System
+// ============================================================
 // COLLISION
 // ============================================================
 function boxOverlap(a, b) {
@@ -3393,6 +3507,10 @@ function processCombat(attackers, defenders, particles, camera) {
   }
 }
 
+</script>
+<script>
+// YARD — AI Controller
+// ============================================================
 // AI CONTROLLER
 // ============================================================
 // Phase 1D: AI States
@@ -3902,6 +4020,10 @@ class AIController {
   }
 }
 
+</script>
+<script>
+// YARD — Gang System
+// ============================================================
 // GANG SYSTEM
 // ============================================================
 const GANG_STATES = {
@@ -4254,6 +4376,10 @@ class Gang {
   }
 }
 
+</script>
+<script>
+// YARD — Environment (Names, PRNG, Procedural Yard & Cell)
+// ============================================================
 // NAMES
 // ============================================================
 const FIRST_NAMES = ['Lil','Big','Tiny','Slim','Ghost','Shadow','Demon','Ace','Duke','Rook',
@@ -4769,6 +4895,10 @@ class ProceduralCell {
   }
 }
 
+</script>
+<script>
+// YARD — Spectator NPCs
+// SPECTATOR NPCs — Batch 2
 // ============================================================
 class Spectator {
   constructor(x, y, edge) {
@@ -4889,12 +5019,446 @@ class Spectator {
   }
 }
 
+</script>
+<script>
+// YARD — Tournament System
+
+const TOURNAMENT_SIZE = 8; // 8-fighter single elimination bracket
+
+class Tournament {
+  constructor(playerGang) {
+    this.playerGang = playerGang;
+    this.round = 0; // 0=quarter, 1=semi, 2=final
+    this.roundNames = ['QUARTERFINALS', 'SEMIFINALS', 'THE FINAL'];
+    this.bracket = [];      // array of { name, gang, traits, alive, seed }
+    this.matchups = [];     // current round matchups [{a, b, winner}]
+    this.allResults = [];   // history of all rounds
+    this.currentMatch = -1; // index into matchups for current fight
+    this.playerSeed = -1;
+    this.phase = 'bracket'; // bracket → fighting → result → bracket → ... → champion
+    this.resultTimer = 0;
+    this.championCelebTimer = 0;
+    this.playerInjuries = 0; // carry over injuries
+    this.playerHealth = 1;   // health % carried over (0-1)
+
+    this._generateBracket();
+  }
+
+  _generateBracket() {
+    const gangs = Object.keys(GANG_COLORS);
+
+    // Create 8 fighters — player is one of them
+    for (let i = 0; i < TOURNAMENT_SIZE; i++) {
+      const isPlayer = i === 0;
+      const gang = isPlayer ? this.playerGang : gangs[Math.floor(Math.random() * gangs.length)];
+
+      // Difficulty scaling — later seeds are tougher (player will face them later)
+      const baseStat = 0.35 + (i / TOURNAMENT_SIZE) * 0.25;
+      const traits = isPlayer ? {
+        aggression: playerTraits.aggression,
+        toughness: playerTraits.toughness,
+        speed: playerTraits.speed,
+        power: playerTraits.power
+      } : {
+        aggression: baseStat + Math.random() * 0.35,
+        toughness: baseStat + Math.random() * 0.3,
+        speed: baseStat + Math.random() * 0.3,
+        power: baseStat + Math.random() * 0.3
+      };
+
+      this.bracket.push({
+        name: isPlayer ? (randomName()) : randomName(),
+        gang,
+        traits,
+        alive: true,
+        seed: i,
+        isPlayer,
+        wins: 0,
+        totalDamage: 0,
+        knockdowns: 0,
+        personality: null // will be derived when Fighter is created
+      });
+    }
+
+    this.playerSeed = 0;
+
+    // Shuffle bracket for random matchups (keep player in the mix)
+    for (let i = this.bracket.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.bracket[i], this.bracket[j]] = [this.bracket[j], this.bracket[i]];
+    }
+    // Find player's new position
+    this.playerSeed = this.bracket.findIndex(b => b.isPlayer);
+
+    this._generateMatchups();
+  }
+
+  _generateMatchups() {
+    this.matchups = [];
+    const alive = this.bracket.filter(b => b.alive);
+    for (let i = 0; i < alive.length; i += 2) {
+      if (i + 1 < alive.length) {
+        this.matchups.push({
+          a: alive[i],
+          b: alive[i + 1],
+          winner: null,
+          fought: false
+        });
+      }
+    }
+    this.currentMatch = -1;
+  }
+
+  getPlayerMatch() {
+    return this.matchups.find(m =>
+      (m.a.isPlayer || m.b.isPlayer) && !m.fought
+    );
+  }
+
+  getNextAIMatch() {
+    return this.matchups.find(m =>
+      !m.a.isPlayer && !m.b.isPlayer && !m.fought
+    );
+  }
+
+  // Simulate an AI vs AI fight (instant result)
+  simulateMatch(match) {
+    const a = match.a;
+    const b = match.b;
+
+    // Simple stat comparison with randomness
+    const aPower = (a.traits.aggression + a.traits.power + a.traits.speed + a.traits.toughness) / 4;
+    const bPower = (b.traits.aggression + b.traits.power + b.traits.speed + b.traits.toughness) / 4;
+
+    const aRoll = aPower + Math.random() * 0.4;
+    const bRoll = bPower + Math.random() * 0.4;
+
+    if (aRoll >= bRoll) {
+      match.winner = a;
+      b.alive = false;
+      a.wins++;
+      a.totalDamage += Math.round(40 + Math.random() * 60);
+    } else {
+      match.winner = b;
+      a.alive = false;
+      b.wins++;
+      b.totalDamage += Math.round(40 + Math.random() * 60);
+    }
+    match.fought = true;
+  }
+
+  // Called after a player fight ends
+  recordPlayerResult(playerWon, playerFighter, opponentFighter) {
+    const match = this.getPlayerMatch() || this.matchups.find(m =>
+      (m.a.isPlayer || m.b.isPlayer)
+    );
+    if (!match) return;
+
+    const playerEntry = match.a.isPlayer ? match.a : match.b;
+    const oppEntry = match.a.isPlayer ? match.b : match.a;
+
+    if (playerWon) {
+      match.winner = playerEntry;
+      oppEntry.alive = false;
+      playerEntry.wins++;
+      playerEntry.totalDamage += Math.round(playerFighter.damageDealt);
+      playerEntry.knockdowns += playerFighter.knockdowns;
+      // Carry over health/injuries (partial recovery between fights)
+      this.playerHealth = Math.min(1, (playerFighter.health / playerFighter.maxHealth) + 0.25);
+      this.playerInjuries = Math.max(0, playerFighter.injuries - 10);
+    } else {
+      match.winner = oppEntry;
+      playerEntry.alive = false;
+      oppEntry.wins++;
+    }
+    match.fought = true;
+  }
+
+  advanceRound() {
+    // Save results
+    this.allResults.push([...this.matchups]);
+
+    // Check for champion
+    const alive = this.bracket.filter(b => b.alive);
+    if (alive.length <= 1) {
+      this.phase = 'champion';
+      return;
+    }
+
+    this.round++;
+    this._generateMatchups();
+    this.phase = 'bracket';
+  }
+
+  isPlayerAlive() {
+    return this.bracket.find(b => b.isPlayer)?.alive ?? false;
+  }
+
+  getChampion() {
+    return this.bracket.find(b => b.alive);
+  }
+
+  allMatchesDone() {
+    return this.matchups.every(m => m.fought);
+  }
+}
+
+// ============================================================
+// TOURNAMENT DRAWING (called from game loop when in tournament mode)
+// ============================================================
+function drawTournamentBracket(ctx, tournament) {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Background — dark concrete
+  ctx.fillStyle = '#0c0b09';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Subtle concrete texture noise
+  ctx.globalAlpha = 0.03;
+  for (let i = 0; i < 80; i++) {
+    const nx = (Math.sin(i * 127.1) * 0.5 + 0.5) * CANVAS_W;
+    const ny = (Math.cos(i * 311.7) * 0.5 + 0.5) * CANVAS_H;
+    ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#8a7a5a';
+    ctx.fillRect(nx, ny, 2 + (i % 3), 1);
+  }
+  ctx.globalAlpha = 1;
+
+  const cx = CANVAS_W / 2;
+
+  if (tournament.phase === 'champion') {
+    const champ = tournament.getChampion();
+    const isPlayer = champ && champ.isPlayer;
+
+    // Champion celebration
+    tournament.championCelebTimer += 16;
+    const pulse = 0.7 + Math.sin(tournament.championCelebTimer * 0.004) * 0.3;
+
+    // Top line
+    ctx.fillStyle = '#3a2a1a';
+    ctx.fillRect(cx - 200, 25, 400, 1);
+
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = isPlayer ? '#ffd080' : '#cc4422';
+    ctx.font = '24px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(isPlayer ? 'YARD CHAMPION' : 'ELIMINATED', cx, 58);
+    ctx.globalAlpha = 1;
+
+    if (champ) {
+      const gc = GANG_COLORS[champ.gang];
+      ctx.fillStyle = gc ? gc.light : '#c4943a';
+      ctx.font = '14px "Press Start 2P", monospace';
+      ctx.fillText(champ.name, cx, 85);
+
+      ctx.fillStyle = '#6a5a4a';
+      ctx.font = '7px "Press Start 2P", monospace';
+      ctx.fillText(`${gc ? gc.name : ''} · ${champ.wins} wins · ${champ.totalDamage} total damage`, cx, 105);
+    }
+
+    // Divider
+    ctx.fillStyle = '#3a2a1a';
+    ctx.fillRect(cx - 200, 115, 400, 1);
+
+    // Draw final bracket state
+    _drawBracketLines(ctx, tournament, 135);
+
+    ctx.fillStyle = '#5a4a3a';
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('R: RUN IT BACK    Q: MENU', cx, CANVAS_H - 25);
+
+    // Scanlines
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    for (let y = 0; y < CANVAS_H; y += 3) {
+      ctx.fillRect(0, y, CANVAS_W, 1);
+    }
+    return;
+  }
+
+  // Header — YARD TOURNAMENT
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(cx - 200, 8, 400, 1);
+
+  ctx.fillStyle = '#6a5a4a';
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('YARD TOURNAMENT', cx, 22);
+
+  // Round title — big and bold
+  ctx.fillStyle = '#c4943a';
+  ctx.font = '16px "Press Start 2P", monospace';
+  ctx.fillText(tournament.roundNames[tournament.round] || `ROUND ${tournament.round + 1}`, cx, 45);
+
+  // Divider
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(cx - 200, 52, 400, 1);
+
+  // Player health carry-over indicator (if not first round)
+  if (tournament.round > 0 && tournament.isPlayerAlive()) {
+    const healthPct = Math.round(tournament.playerHealth * 100);
+    ctx.fillStyle = healthPct > 60 ? '#5a8a4a' : healthPct > 30 ? '#8a7a3a' : '#8a3a2a';
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.fillText(`YOUR CONDITION: ${healthPct}%`, cx, 65);
+  }
+
+  // Bracket display
+  _drawBracketLines(ctx, tournament, 75);
+
+  // Instructions — bigger, clearer
+  const allDone = tournament.allMatchesDone();
+  const playerMatch = tournament.getPlayerMatch();
+
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+
+  if (playerMatch && !playerMatch.fought) {
+    ctx.fillStyle = '#ffd080';
+    ctx.fillText('ENTER: STEP UP    Q: WALK AWAY', cx, CANVAS_H - 25);
+  } else if (!allDone) {
+    ctx.fillStyle = '#8a7a5a';
+    ctx.fillText('ENTER: NEXT FIGHT', cx, CANVAS_H - 25);
+  } else {
+    ctx.fillStyle = '#ffd080';
+    ctx.fillText('ENTER: NEXT ROUND', cx, CANVAS_H - 25);
+  }
+
+  // Scanlines
+  ctx.fillStyle = 'rgba(0,0,0,0.04)';
+  for (let y = 0; y < CANVAS_H; y += 3) {
+    ctx.fillRect(0, y, CANVAS_W, 1);
+  }
+}
+
+function _drawBracketLines(ctx, tournament, startY) {
+  const cx = CANVAS_W / 2;
+  const results = tournament.allResults;
+
+  let y = startY;
+
+  // Quarterfinals (round 0)
+  const qfMatchups = results[0] || (tournament.round === 0 ? tournament.matchups : []);
+  if (qfMatchups.length > 0) {
+    ctx.fillStyle = '#4a3a2a';
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('QUARTERFINALS', cx, y);
+    y += 16;
+    _drawMatchupRow(ctx, qfMatchups, y, tournament);
+    y += qfMatchups.length * 28 + 12;
+  }
+
+  // Semifinals (round 1)
+  const sfMatchups = results[1] || (tournament.round === 1 ? tournament.matchups : []);
+  if (sfMatchups.length > 0 || tournament.round >= 1) {
+    ctx.fillStyle = '#5a4a2a';
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('SEMIFINALS', cx, y);
+    y += 16;
+    if (sfMatchups.length > 0) {
+      _drawMatchupRow(ctx, sfMatchups, y, tournament);
+      y += sfMatchups.length * 28 + 12;
+    }
+  }
+
+  // Final (round 2)
+  const fMatchups = results[2] || (tournament.round === 2 ? tournament.matchups : []);
+  if (fMatchups.length > 0 || tournament.round >= 2) {
+    ctx.fillStyle = '#7a5a2a';
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('THE FINAL', cx, y);
+    y += 16;
+    if (fMatchups.length > 0) {
+      _drawMatchupRow(ctx, fMatchups, y, tournament);
+    }
+  }
+}
+
+function _drawMatchupRow(ctx, matchups, startY, tournament) {
+  const cx = CANVAS_W / 2;
+  let y = startY;
+
+  for (const match of matchups) {
+    const a = match.a;
+    const b = match.b;
+    const isPlayerMatch = a.isPlayer || b.isPlayer;
+
+    // Background highlight for player's match
+    if (isPlayerMatch && !match.fought) {
+      ctx.fillStyle = 'rgba(196,148,58,0.1)';
+      ctx.fillRect(cx - 260, y - 8, 520, 24);
+      // Border lines
+      ctx.fillStyle = 'rgba(196,148,58,0.15)';
+      ctx.fillRect(cx - 260, y - 8, 520, 1);
+      ctx.fillRect(cx - 260, y + 15, 520, 1);
+    }
+
+    // Won match highlight
+    if (match.fought && isPlayerMatch) {
+      const playerWon = (a.isPlayer && match.winner === a) || (b.isPlayer && match.winner === b);
+      if (playerWon) {
+        ctx.fillStyle = 'rgba(90,138,74,0.06)';
+        ctx.fillRect(cx - 260, y - 8, 520, 24);
+      }
+    }
+
+    // Fighter A
+    const aGC = GANG_COLORS[a.gang];
+    ctx.fillStyle = match.fought
+      ? (match.winner === a ? '#c4943a' : '#3a3a3a')
+      : (a.isPlayer ? '#e8c878' : (aGC ? aGC.primary : '#8a7a5a'));
+    ctx.font = `${a.isPlayer ? '9' : '8'}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'right';
+    const aPrefix = a.isPlayer ? '▶ ' : '';
+    ctx.fillText(`${aPrefix}${a.name}`, cx - 25, y + 5);
+
+    // VS / result
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    if (match.fought) {
+      ctx.fillStyle = '#6a5a3a';
+      ctx.fillText(match.winner === a ? '◀ W' : 'W ▶', cx, y + 5);
+    } else {
+      ctx.fillStyle = '#3a3a3a';
+      ctx.fillText('VS', cx, y + 5);
+    }
+
+    // Fighter B
+    const bGC = GANG_COLORS[b.gang];
+    ctx.fillStyle = match.fought
+      ? (match.winner === b ? '#c4943a' : '#3a3a3a')
+      : (b.isPlayer ? '#e8c878' : (bGC ? bGC.primary : '#8a7a5a'));
+    ctx.font = `${b.isPlayer ? '9' : '8'}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'left';
+    const bPrefix = b.isPlayer ? '▶ ' : '';
+    ctx.fillText(`${bPrefix}${b.name}`, cx + 25, y + 5);
+
+    // Gang color dots — larger
+    if (aGC) {
+      ctx.fillStyle = match.fought && match.winner !== a ? '#2a2a2a' : aGC.primary;
+      ctx.fillRect(cx - 240, y - 2, 8, 8);
+    }
+    if (bGC) {
+      ctx.fillStyle = match.fought && match.winner !== b ? '#2a2a2a' : bGC.primary;
+      ctx.fillRect(cx + 232, y - 2, 8, 8);
+    }
+
+    y += 26;
+  }
+}
+
+</script>
+<script>
+// YARD — Game Class
+// ============================================================
 // MAIN GAME CLASS
 // ============================================================
 class Game {
-  constructor(mode, playerGang) {
+  constructor(mode, playerGang, config = null) {
     this.mode = mode;
     this.playerGang = playerGang;
+    this.customConfig = config;
     this.fighters = [];
     this.gangs = [];
     this.particles = new ParticleSystem();
@@ -4903,8 +5467,29 @@ class Game {
     this.announcer = new Announcer();
     this.bloodStains = []; // Batch 5: persistent blood marks on ground
     this.player = null;
-    this.worldW = mode === 'riot' ? YARD_RIOT_W : mode === 'cell' ? YARD_CELL_W : YARD_1V1_W;
-    this.worldH = mode === 'riot' ? YARD_RIOT_H : mode === 'cell' ? YARD_CELL_H : YARD_1V1_H;
+
+    // World size — custom mode uses arena setting, scales with fighter count
+    if (mode === 'custom' && config) {
+      const totalFighters = config.crewSize + config.enemyTeams.reduce((s, t) => s + t.count, 0);
+      if (config.arena === 'cell') {
+        this.worldW = YARD_CELL_W;
+        this.worldH = YARD_CELL_H;
+      } else if (totalFighters <= 2) {
+        this.worldW = YARD_1V1_W;
+        this.worldH = YARD_1V1_H;
+      } else if (totalFighters <= 6) {
+        // Scale yard with fighter count
+        this.worldW = Math.floor(YARD_1V1_W + (YARD_RIOT_W - YARD_1V1_W) * ((totalFighters - 2) / 8));
+        this.worldH = Math.floor(YARD_1V1_H + (YARD_RIOT_H - YARD_1V1_H) * ((totalFighters - 2) / 8));
+      } else {
+        this.worldW = YARD_RIOT_W;
+        this.worldH = YARD_RIOT_H;
+      }
+    } else {
+      this.worldW = mode === 'riot' ? YARD_RIOT_W : mode === 'cell' ? YARD_CELL_W : YARD_1V1_W;
+      this.worldH = mode === 'riot' ? YARD_RIOT_H : mode === 'cell' ? YARD_CELL_H : YARD_1V1_H;
+    }
+
     this.camera.worldW = this.worldW;
     this.camera.worldH = this.worldH;
     this.ais = [];
@@ -4913,12 +5498,17 @@ class Game {
     this.riotTriggered = false;
     this.slowmo = 0;
     this.hitFlashAlpha = 0; // Phase 2: screen flash on big hits
-    this.yard = mode === 'cell' ? new ProceduralCell(this.worldW, this.worldH) : new ProceduralYard(this.worldW, this.worldH);
+
+    const isCell = (mode === 'cell') || (mode === 'custom' && config && config.arena === 'cell');
+    this.yard = isCell ? new ProceduralCell(this.worldW, this.worldH) : new ProceduralYard(this.worldW, this.worldH);
 
     // Fight intro/outro
     this.introTimer = 0;
-    this.introPhase = (mode === '1v1' || mode === 'cell') ? 'staredown' : 'none'; // staredown → names → go → done
-    this.introDuration = 2400; // total intro time
+    const totalFighters = mode === 'custom' && config ?
+      config.crewSize + config.enemyTeams.reduce((s, t) => s + t.count, 0) : 0;
+    const isSmallFight = (mode === '1v1' || mode === 'cell' || (mode === 'custom' && totalFighters <= 4));
+    this.introPhase = isSmallFight ? 'staredown' : 'none';
+    this.introDuration = 2400;
     this.outroTimer = 0;
     this.outroActive = false;
 
@@ -4928,18 +5518,20 @@ class Game {
     this.totalKOs = 0;
     this.lastStandingGang = null;
 
-    // Batch 2: Guard alarm (riot mode)
+    // Batch 2: Guard alarm (riot/custom multi mode)
     this.guardAlarmDuration = GUARD_ALARM_MIN + Math.random() * (GUARD_ALARM_MAX - GUARD_ALARM_MIN);
     this.guardAlarmTimer = 0;
-    this.guardAlarmActive = false;    // true once riot erupts
+    this.guardAlarmActive = false;
     this.guardWarningShown = false;
-    this.guardRecallActive = false;   // true when guards are breaking it up
+    this.guardRecallActive = false;
     this.guardRecallTimer = 0;
 
     // Batch 2: Spectator NPCs
     this.spectators = [];
 
-    if (mode === '1v1') {
+    if (mode === 'custom') {
+      this._setupCustom(config);
+    } else if (mode === '1v1') {
       this._setup1v1();
     } else if (mode === 'cell') {
       this._setupCell();
@@ -5096,6 +5688,112 @@ class Game {
     this._spawnSpectators();
 
     this.announcer.show('YARD TIME', 'Tensions are rising...', 3000);
+  }
+
+  _setupCustom(config) {
+    const isCell = config.arena === 'cell';
+    const totalFighters = config.crewSize + config.enemyTeams.reduce((s, t) => s + t.count, 0);
+    const isMulti = totalFighters > 4;
+
+    // Spawn player's crew
+    const pDef = getCharDef(this.playerGang);
+    for (let i = 0; i < config.crewSize; i++) {
+      const fx = this.worldW * 0.25 + randRange(-40, 40);
+      const fy = this.worldH * 0.5 + randRange(-30, 30);
+      const traits = i === 0 ? {
+        aggression: playerTraits.aggression,
+        toughness: playerTraits.toughness,
+        speed: playerTraits.speed,
+        power: playerTraits.power
+      } : {
+        aggression: 0.3 + Math.random() * 0.5,
+        toughness: 0.3 + Math.random() * 0.5,
+        speed: 0.3 + Math.random() * 0.5,
+        power: 0.3 + Math.random() * 0.5
+      };
+      const fighter = new Fighter(fx, fy, pDef, this.playerGang, traits);
+      fighter.name = randomName();
+      fighter.facing = 1;
+
+      if (i === 0) {
+        fighter.isPlayer = true;
+        this.player = fighter;
+      } else {
+        const ai = new AIController(fighter, 0.45 + Math.random() * 0.35);
+        this.ais.push(ai);
+      }
+      this.fighters.push(fighter);
+    }
+
+    // Spawn enemy teams
+    const teamPositions = [
+      { x: this.worldW * 0.75, y: this.worldH * 0.5 },
+      { x: this.worldW * 0.5, y: this.worldH * 0.2 },
+      { x: this.worldW * 0.5, y: this.worldH * 0.8 },
+    ];
+    config.enemyTeams.forEach((team, ti) => {
+      const pos = teamPositions[ti % teamPositions.length];
+      const eDef = getCharDef(team.gang);
+      for (let i = 0; i < team.count; i++) {
+        const fx = pos.x + randRange(-35, 35);
+        const fy = pos.y + randRange(-25, 25);
+        const traits = {
+          aggression: 0.4 + Math.random() * 0.5,
+          toughness: 0.3 + Math.random() * 0.5,
+          speed: 0.3 + Math.random() * 0.5,
+          power: 0.3 + Math.random() * 0.5
+        };
+        const enemy = new Fighter(fx, fy, eDef, team.gang, traits);
+        enemy.name = randomName();
+        enemy.facing = -1;
+        this.fighters.push(enemy);
+        const ai = new AIController(enemy, 0.45 + Math.random() * 0.4);
+        this.ais.push(ai);
+      }
+    });
+
+    // Set targets — enemies target player's gang, allies target nearest enemy
+    for (const f of this.fighters) {
+      if (!f.isPlayer) {
+        const enemies = this.fighters.filter(e => e.gangId !== f.gangId && e.alive);
+        if (enemies.length > 0) {
+          f.target = enemies[Math.floor(Math.random() * enemies.length)];
+        }
+      }
+    }
+
+    // Camera setup
+    if (isCell) {
+      this.camera.zoom = 2.2;
+    } else if (totalFighters <= 2) {
+      this.camera.zoom = 1.5;
+    } else {
+      this.camera.zoom = Math.min(CANVAS_W / (this.worldW * 0.7), CANVAS_H / (this.worldH * 0.7));
+    }
+    this.camera.followFast = true;
+    this.camera.targetX = this.worldW / 2;
+    this.camera.targetY = this.worldH / 2;
+    this.camera.x = (this.worldW - CANVAS_W / this.camera.zoom) / 2;
+    this.camera.y = (this.worldH - CANVAS_H / this.camera.zoom) / 2;
+
+    // Spectators for yard fights
+    if (!isCell && totalFighters > 2) {
+      this._spawnSpectators();
+    }
+
+    // Build intro text
+    const gangNames = config.enemyTeams.map(t => GANG_COLORS[t.gang].name);
+    const vsText = gangNames.join(' & ');
+    const crewText = config.crewSize > 1 ? `${config.crewSize} ${GANG_COLORS[this.playerGang].name}` : GANG_COLORS[this.playerGang].name;
+    this._oppGang = config.enemyTeams[0].gang;
+
+    if (totalFighters <= 4) {
+      // Small fight — use intro system
+    } else {
+      // Big fight — skip intro, just announce
+      this.introPhase = 'none';
+      this.announcer.show(`${crewText} vs ${vsText}`, `${totalFighters} fighters`, 2500);
+    }
   }
 
   _spawnSpectators() {
@@ -5280,11 +5978,22 @@ class Game {
       spec.update(effectiveDt, this.fighters);
     }
 
-    // Update 1v1 AIs
+    // Update AIs — custom/1v1/cell modes
     if (this.mode === '1v1' || this.mode === 'cell') {
       for (const ai of this.ais) {
-        const target = this.player;
-        ai.update(effectiveDt, target);
+        ai.update(effectiveDt, this.player);
+      }
+    } else if (this.mode === 'custom') {
+      for (const ai of this.ais) {
+        const f = ai.fighter;
+        // Find nearest enemy (different gang)
+        let nearest = null, nd = Infinity;
+        for (const e of this.fighters) {
+          if (e === f || e.gangId === f.gangId || !e.alive) continue;
+          const d = dist(f, e);
+          if (d < nd) { nd = d; nearest = e; }
+        }
+        ai.update(effectiveDt, nearest);
       }
     }
 
@@ -5332,7 +6041,13 @@ class Game {
     this.dmgNumbers.update(effectiveDt);
 
     // Update camera
-    if (this.mode === '1v1' || this.mode === 'cell') {
+    if (this.mode === 'custom' && this.customConfig && this.customConfig.arena === 'cell') {
+      // Custom cell: tight zoom centered
+      const mx = this.fighters.reduce((s, f) => s + f.x, 0) / this.fighters.length;
+      const my = this.fighters.reduce((s, f) => s + f.y, 0) / this.fighters.length;
+      this.camera.setTarget(mx, my);
+      this.camera.zoom = lerp(this.camera.zoom, 2.2, 0.08);
+    } else if (this.mode === '1v1' || this.mode === 'cell') {
       // Track midpoint, dynamically zoom to keep both fighters visible
       const f0 = this.fighters[0];
       const f1 = this.fighters[1];
@@ -5693,8 +6408,8 @@ class Game {
           p.faceTarget();
         }
       }
-    } else if (this.mode === 'riot') {
-      // Face nearest enemy in riot
+    } else if (this.mode === 'riot' || this.mode === 'custom') {
+      // Face nearest enemy
       let nearest = null, nd = Infinity;
       for (const f of this.fighters) {
         if (f === p || f.gangId === p.gangId || !f.alive) continue;
@@ -5743,10 +6458,34 @@ class Game {
         this.outroActive = true;
         this.outroTimer = 0;
         const winner = deadFighter === this.player ? 'DEFEAT' : 'KNOCKOUT';
-        const subtext = deadFighter === this.player ? 'R: Rematch · Q: Menu' : 'R: Rematch · Q: Menu';
-        // Don't show duplicate announcer if TKO already announced
         if (!this.announcer.text || this.announcer.life <= 0) {
-          this.announcer.show(winner, subtext, 999999);
+          this.announcer.show(winner, 'R: Rematch · Q: Menu', 999999);
+        }
+      }
+    } else if (this.mode === 'custom') {
+      // Custom: player KO = loss, all enemies dead = win
+      if (this.player && this.player.state === STATES.KO) {
+        this.gameOver = true;
+        this.slowmo = 1500;
+        this.outroActive = true;
+        this.outroTimer = 0;
+        this.announcer.show('LIGHTS OUT', 'R: Rematch · Q: Menu', 999999);
+      } else {
+        const enemiesAlive = this.fighters.filter(f => f.gangId !== this.playerGang && f.alive);
+        const alliesAlive = this.fighters.filter(f => f.gangId === this.playerGang && f.alive);
+        if (enemiesAlive.length === 0 && alliesAlive.length > 0) {
+          this.gameOver = true;
+          this.slowmo = 1500;
+          this.outroActive = true;
+          this.outroTimer = 0;
+          const survived = alliesAlive.length;
+          this.announcer.show('CLEARED', `${survived} standing · R: Rematch · Q: Menu`, 999999);
+        } else if (alliesAlive.length === 0) {
+          this.gameOver = true;
+          this.slowmo = 1500;
+          this.outroActive = true;
+          this.outroTimer = 0;
+          this.announcer.show('WIPED OUT', 'R: Rematch · Q: Menu', 999999);
         }
       }
     } else {
@@ -5908,6 +6647,8 @@ class Game {
 
       if (this.mode === '1v1' || this.mode === 'cell') {
         this._drawStats1v1(ctx);
+      } else if (this.mode === 'custom') {
+        this._drawStatsCustom(ctx);
       } else {
         this._drawStatsRiot(ctx);
       }
@@ -6061,6 +6802,69 @@ class Game {
     ctx.fillText('R: REMATCH    Q: MENU', cx, y);
   }
 
+  _drawStatsCustom(ctx) {
+    const cx = CANVAS_W / 2;
+    let y = 100;
+
+    ctx.fillStyle = '#c4943a';
+    ctx.font = '14px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('FIGHT RESULTS', cx, y);
+    y += 35;
+
+    // Group fighters by gang
+    const gangGroups = {};
+    for (const f of this.fighters) {
+      if (!gangGroups[f.gangId]) gangGroups[f.gangId] = [];
+      gangGroups[f.gangId].push(f);
+    }
+
+    ctx.font = '6px "Press Start 2P", monospace';
+    for (const gangId of Object.keys(gangGroups)) {
+      const gc = GANG_COLORS[gangId];
+      const members = gangGroups[gangId];
+      const alive = members.filter(m => m.alive).length;
+      const isPlayer = gangId === this.playerGang;
+
+      ctx.fillStyle = gc.primary;
+      ctx.textAlign = 'left';
+      ctx.fillText(`${isPlayer ? '▶ ' : ''}${gc.name}`, cx - 180, y);
+      ctx.fillStyle = alive > 0 ? '#6a8a4a' : '#aa4422';
+      ctx.fillText(`${alive}/${members.length} standing`, cx - 40, y);
+
+      const totalHits = members.reduce((s, m) => s + m.hitsLanded, 0);
+      const totalDmg = Math.round(members.reduce((s, m) => s + m.damageDealt, 0));
+      ctx.fillStyle = '#8a7a5a';
+      ctx.fillText(`${totalHits} hits · ${totalDmg} dmg`, cx + 60, y);
+      y += 16;
+    }
+
+    y += 15;
+
+    // Player personal stats
+    if (this.player) {
+      const p = this.player;
+      ctx.fillStyle = '#c4943a';
+      ctx.textAlign = 'center';
+      ctx.font = '7px "Press Start 2P", monospace';
+      ctx.fillText(`YOUR STATS — ${p.name}`, cx, y);
+      y += 18;
+
+      ctx.font = '6px "Press Start 2P", monospace';
+      ctx.fillStyle = '#8a7a5a';
+      ctx.fillText(`HITS: ${p.hitsLanded}  DMG: ${Math.round(p.damageDealt)}  KOs: ${p.knockdowns}  INJURY: ${Math.round(p.injuries)}%`, cx, y);
+      y += 14;
+      ctx.fillStyle = '#5a4a3a';
+      ctx.fillText(`STYLE: ${p.personality.toUpperCase()}`, cx, y);
+    }
+
+    y += 20;
+    ctx.fillStyle = '#5a4a3a';
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('R: REMATCH    Q: MENU', cx, y);
+  }
+
   _drawStatsRiot(ctx) {
     const cx = CANVAS_W / 2;
     let y = 90;
@@ -6147,10 +6951,18 @@ class Game {
   }
 }
 
+</script>
+<script>
+// YARD — Game Lifecycle & Initialization
+// ============================================================
 // GAME LIFECYCLE
 // ============================================================
 let lastTime = 0;
 let running = false;
+
+// Tournament state
+let tournament = null;
+let tournamentFightDone = false; // flag: the current fight ended, need to record result
 
 function gameLoop(timestamp) {
   if (!running) return;
@@ -6160,20 +6972,69 @@ function gameLoop(timestamp) {
   if (gameState === 'playing' && game) {
     game.update(dt);
 
-    // Global input
-    if (input.wasPressed('Escape')) {
+    // Tournament fight: override announcer text and handle return to bracket
+    if (tournament && game.gameOver && !tournamentFightDone) {
+      tournamentFightDone = true;
+      const player = game.fighters.find(f => f.isPlayer);
+      const playerWon = player && player.alive && player.state !== STATES.KO;
+      if (playerWon) {
+        game.announcer.show('ADVANCING', 'ENTER: Continue', 999999);
+      } else {
+        game.announcer.show('ELIMINATED', 'ENTER: See Results', 999999);
+      }
+    }
+
+    // Global input — pause
+    if (input.wasPressed('Escape') && !game.gameOver) {
       gameState = 'paused';
       pauseOverlay.style.display = 'flex';
     }
-    if (input.wasPressed('KeyR')) {
+    // Restart (not in tournament — no do-overs)
+    if (input.wasPressed('KeyR') && !tournament) {
       restartGame();
     }
-    if (input.wasPressed('KeyQ') && game && game.gameOver) {
+    // Tournament: Enter or Q to leave fight when game over
+    if (tournament && game.gameOver && game.gameOverTimer > 1500) {
+      if (input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('KeyQ')) {
+        _tournamentFightEnded();
+      }
+    }
+    // Normal: Q to quit
+    if (!tournament && input.wasPressed('KeyQ') && game.gameOver) {
       quitToMenu();
     }
   }
 
-  if (game) {
+  // Pause menu keyboard controls
+  if (gameState === 'paused') {
+    if (input.wasPressed('Escape')) {
+      resumeGame();
+    }
+    if (input.wasPressed('Enter') || input.wasPressed('KeyQ')) {
+      if (tournament) {
+        // In tournament, quitting a fight = forfeit
+        pauseOverlay.style.display = 'none';
+        gameState = 'playing';
+        // Force player KO to trigger elimination
+        if (game && game.player && game.player.alive) {
+          game.player.health = 0;
+          game.player.alive = false;
+          game.player.setState(STATES.KO);
+        }
+      } else {
+        quitToMenu();
+      }
+    }
+  }
+
+  // Tournament bracket screen
+  if (gameState === 'tournament' && tournament) {
+    _updateTournament(dt);
+    // Guard: _updateTournament may have quit/nulled tournament mid-frame
+    if (tournament) drawTournamentBracket(ctx, tournament);
+  }
+
+  if (gameState === 'playing' && game) {
     game.draw(ctx);
   }
 
@@ -6198,8 +7059,8 @@ function resizeCanvas() {
 }
 
 // Menu keyboard navigation state
-let menuSelection = 0; // 0=1v1, 1=cell, 2=riot
-const menuModes = ['1v1', 'cell', 'riot'];
+let menuSelection = 0; // 0=1v1, 1=cell, 2=riot, 3=tournament, 4=custom
+const menuModes = ['1v1', 'cell', 'riot', 'tournament', 'custom'];
 
 function selectGang(el) {
   document.querySelectorAll('.gang-btn').forEach(b => b.classList.remove('selected'));
@@ -6208,11 +7069,19 @@ function selectGang(el) {
 }
 
 function updateMenuHighlight() {
-  const btns = document.querySelectorAll('#menu-screen .menu-section:nth-child(2) .menu-btn');
+  const btns = document.querySelectorAll('#quickstart-section .menu-btn');
   btns.forEach((b, i) => {
-    b.style.borderColor = i === menuSelection ? '#c4943a' : '#3a2a1a';
-    b.style.color = i === menuSelection ? '#ffd080' : '#c4943a';
-    b.style.background = i === menuSelection ? '#2a1a0a' : '#1a1208';
+    if (i === menuSelection) {
+      b.style.borderColor = '#c4943a';
+      b.style.color = '#ffd080';
+      b.style.background = '#2a1a0a';
+      b.style.transform = 'scale(1.02)';
+    } else {
+      b.style.borderColor = '#3a2a1a';
+      b.style.color = '#c4943a';
+      b.style.background = '#1a1208';
+      b.style.transform = 'scale(1)';
+    }
   });
 }
 
@@ -6240,7 +7109,14 @@ function handleMenuKeys(e) {
     selectGang(gangBtns[newIdx]);
     e.preventDefault();
   } else if (e.code === 'Enter' || e.code === 'Space') {
-    startGame(menuModes[menuSelection]);
+    const mode = menuModes[menuSelection];
+    if (mode === 'tournament') {
+      startTournament();
+    } else if (mode === 'custom') {
+      toggleCustom();
+    } else {
+      startGame(mode);
+    }
     e.preventDefault();
   }
 }
@@ -6259,10 +7135,17 @@ function startGame(mode) {
 function restartGame() {
   if (!gameMode) return;
   SFX.stopAmbience();
-  game = new Game(gameMode, selectedGang);
+  if (gameMode === 'custom' && game && game.customConfig) {
+    const config = game.customConfig;
+    game = new Game('custom', selectedGang, config);
+    const total = config.crewSize + config.enemyTeams.reduce((s, t) => s + t.count, 0);
+    SFX.startAmbience(total > 4 ? 'riot' : '1v1');
+  } else {
+    game = new Game(gameMode, selectedGang);
+    SFX.startAmbience(gameMode);
+  }
   gameState = 'playing';
   pauseOverlay.style.display = 'none';
-  SFX.startAmbience(gameMode);
 }
 
 function resumeGame() {
@@ -6275,10 +7158,278 @@ function quitToMenu() {
   gameState = 'menu';
   game = null;
   gameMode = null;
+  tournament = null;
   menuScreen.style.display = 'flex';
   hudEl.style.display = 'none';
   pauseOverlay.style.display = 'none';
   updateMenuHighlight();
+}
+
+// ============================================================
+// CUSTOM FIGHT CONFIGURATOR
+// ============================================================
+let customArena = 'yard';
+let customCrewSize = 1;
+let customEnemyTeams = []; // [{gang: 'woods', count: 1}, ...]
+
+function toggleCustom() {
+  const panel = document.getElementById('custom-panel');
+  const btn = document.getElementById('custom-toggle-btn');
+  if (panel.style.display === 'none') {
+    panel.style.display = 'flex';
+    btn.textContent = 'CUSTOM  FIGHT  ▲';
+    btn.style.borderColor = '#c4943a';
+    btn.style.color = '#ffd080';
+    // Init with one enemy team if empty
+    if (customEnemyTeams.length === 0) {
+      const otherGangs = Object.keys(GANG_COLORS).filter(g => g !== selectedGang);
+      customEnemyTeams.push({ gang: otherGangs[0], count: 1 });
+    }
+    rebuildEnemyTeamsUI();
+    updateCustomSummary();
+  } else {
+    panel.style.display = 'none';
+    btn.textContent = 'CUSTOM  FIGHT  ▼';
+    btn.style.borderColor = '#5a4a3a';
+    btn.style.color = '#8a7a5a';
+  }
+}
+
+function selectArena(el) {
+  document.querySelectorAll('#arena-select .cfg-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  customArena = el.dataset.arena;
+  updateCustomSummary();
+}
+
+function adjustCrew(delta) {
+  customCrewSize = Math.max(1, Math.min(8, customCrewSize + delta));
+  document.getElementById('crew-count').textContent = customCrewSize;
+  updateCustomSummary();
+}
+
+function addEnemyTeam() {
+  if (customEnemyTeams.length >= 3) return; // max 3 enemy gangs
+  const usedGangs = [selectedGang, ...customEnemyTeams.map(t => t.gang)];
+  const available = Object.keys(GANG_COLORS).filter(g => !usedGangs.includes(g));
+  if (available.length === 0) return;
+  customEnemyTeams.push({ gang: available[0], count: 1 });
+  rebuildEnemyTeamsUI();
+  updateCustomSummary();
+  // Hide add button if all gangs used
+  document.getElementById('add-team-btn').style.display =
+    customEnemyTeams.length >= 3 || available.length <= 1 ? 'none' : 'block';
+}
+
+function removeEnemyTeam(idx) {
+  customEnemyTeams.splice(idx, 1);
+  rebuildEnemyTeamsUI();
+  updateCustomSummary();
+  document.getElementById('add-team-btn').style.display = 'block';
+}
+
+function cycleEnemyGang(idx) {
+  const usedGangs = [selectedGang, ...customEnemyTeams.filter((_, i) => i !== idx).map(t => t.gang)];
+  const available = Object.keys(GANG_COLORS).filter(g => !usedGangs.includes(g));
+  if (available.length === 0) return;
+  const current = available.indexOf(customEnemyTeams[idx].gang);
+  customEnemyTeams[idx].gang = available[(current + 1) % available.length];
+  rebuildEnemyTeamsUI();
+  updateCustomSummary();
+}
+
+function adjustEnemyCount(idx, delta) {
+  customEnemyTeams[idx].count = Math.max(1, Math.min(8, customEnemyTeams[idx].count + delta));
+  rebuildEnemyTeamsUI();
+  updateCustomSummary();
+}
+
+function rebuildEnemyTeamsUI() {
+  const container = document.getElementById('enemy-teams');
+  container.innerHTML = '';
+  customEnemyTeams.forEach((team, i) => {
+    const gc = GANG_COLORS[team.gang];
+    const row = document.createElement('div');
+    row.className = 'enemy-team-row';
+    row.innerHTML = `
+      <span class="gang-chip active" onclick="cycleEnemyGang(${i})" style="background:${gc.primary};color:#fff;font-family:'Press Start 2P',monospace;">${gc.name}</span>
+      <button class="cfg-btn-sm" onclick="adjustEnemyCount(${i},-1)" style="width:14px;height:14px;font-size:6px;">-</button>
+      <span style="font-size:6px;color:#c4943a;width:14px;text-align:center;">${team.count}</span>
+      <button class="cfg-btn-sm" onclick="adjustEnemyCount(${i},1)" style="width:14px;height:14px;font-size:6px;">+</button>
+      <span class="remove-btn" onclick="removeEnemyTeam(${i})">✕</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function updateCustomSummary() {
+  const totalEnemy = customEnemyTeams.reduce((s, t) => s + t.count, 0);
+  const totalFighters = customCrewSize + totalEnemy;
+  const arenaLabel = customArena === 'cell' ? 'Cell' : 'Yard';
+  const el = document.getElementById('custom-summary');
+  el.textContent = `${customCrewSize} vs ${totalEnemy} · ${totalFighters} fighters · ${arenaLabel}`;
+}
+
+function startCustomGame() {
+  if (customEnemyTeams.length === 0) return;
+  SFX.init();
+  SFX.resume();
+  gameMode = 'custom';
+  gameState = 'playing';
+  menuScreen.style.display = 'none';
+  hudEl.style.display = 'block';
+  const config = {
+    arena: customArena,
+    playerGang: selectedGang,
+    crewSize: customCrewSize,
+    enemyTeams: customEnemyTeams.map(t => ({ ...t }))
+  };
+  game = new Game('custom', selectedGang, config);
+  SFX.startAmbience(customCrewSize + customEnemyTeams.reduce((s, t) => s + t.count, 0) > 4 ? 'riot' : '1v1');
+}
+
+// ============================================================
+// TOURNAMENT MODE
+// ============================================================
+function startTournament() {
+  SFX.init();
+  SFX.resume();
+  gameMode = 'tournament';
+  gameState = 'tournament';
+  menuScreen.style.display = 'none';
+  hudEl.style.display = 'none';
+  game = null;
+  tournament = new Tournament(selectedGang);
+  tournamentFightDone = false;
+  SFX.bell();
+}
+
+function _updateTournament(dt) {
+  if (!tournament) return;
+
+  if (tournament.phase === 'champion') {
+    // Champion screen — R to play again, Q to menu
+    if (input.wasPressed('KeyR')) {
+      startTournament(); // fresh tournament
+    }
+    if (input.wasPressed('KeyQ')) {
+      tournament = null;
+      quitToMenu();
+    }
+    return;
+  }
+
+  // Bracket screen input
+  if (input.wasPressed('Enter') || input.wasPressed('Space')) {
+    if (tournament.allMatchesDone()) {
+      // All matches in this round are done — advance to next round
+      tournament.advanceRound();
+      return;
+    }
+
+    // Check if player's match is next
+    const playerMatch = tournament.getPlayerMatch();
+    if (playerMatch && !playerMatch.fought) {
+      // Start a real fight for the player
+      _startTournamentFight(playerMatch);
+      return;
+    }
+
+    // Otherwise simulate next AI match
+    const aiMatch = tournament.getNextAIMatch();
+    if (aiMatch) {
+      tournament.simulateMatch(aiMatch);
+      SFX.punchHit(0.5);
+      // Brief pause for visual feedback — the bracket redraws with result
+    }
+  }
+
+  if (input.wasPressed('KeyQ')) {
+    tournament = null;
+    quitToMenu();
+  }
+}
+
+function _startTournamentFight(match) {
+  // Determine opponent entry from bracket
+  const oppEntry = match.a.isPlayer ? match.b : match.a;
+  const playerEntry = match.a.isPlayer ? match.a : match.b;
+
+  // Create a 1v1 Game — the game creates proper fighters with different gangIds
+  gameState = 'playing';
+  hudEl.style.display = 'block';
+
+  game = new Game('1v1', selectedGang);
+
+  // Override names and traits to match the tournament bracket
+  // IMPORTANT: do NOT override gangId — _setup1v1 already guarantees different gangs
+  // for the combat system. Overriding gangId to the player's gang breaks hit detection.
+  const opp = game.fighters.find(f => !f.isPlayer);
+  const player = game.fighters.find(f => f.isPlayer);
+
+  if (opp) {
+    opp.name = oppEntry.name;
+    // Apply tournament traits and recalculate derived stats
+    opp.traits = { ...oppEntry.traits };
+    opp.maxHealth = MAX_HEALTH * (0.8 + oppEntry.traits.toughness * 0.4);
+    opp.health = opp.maxHealth;
+    opp.baseMoveSpeed = 1.2 + oppEntry.traits.speed * 0.8;
+    opp.damageMult = 0.7 + oppEntry.traits.power * 0.6;
+  }
+
+  if (player) {
+    player.name = playerEntry.name;
+    // Apply carried-over health/injuries from previous tournament fights
+    player.health = player.maxHealth * tournament.playerHealth;
+    player.injuries = tournament.playerInjuries;
+  }
+
+  tournamentFightDone = false;
+  SFX.startAmbience('1v1');
+}
+
+function _tournamentFightEnded() {
+  if (!tournament || !game) return;
+
+  // Determine if player won
+  const player = game.fighters.find(f => f.isPlayer);
+  const opp = game.fighters.find(f => !f.isPlayer);
+  const playerWon = player && player.alive && player.state !== STATES.KO;
+
+  // Record result in tournament bracket
+  tournament.recordPlayerResult(playerWon, player, opp);
+
+  // Clean up fight
+  SFX.stopAmbience();
+  game = null;
+  hudEl.style.display = 'none';
+  gameState = 'tournament';
+  tournamentFightDone = false;
+
+  // If player lost, show elimination on bracket then allow exit
+  if (!playerWon) {
+    // Let them see the bracket one more time, then advance to show who won the tournament
+    // Simulate remaining matches in this round
+    while (!tournament.allMatchesDone()) {
+      const aiMatch = tournament.getNextAIMatch();
+      if (aiMatch) {
+        tournament.simulateMatch(aiMatch);
+      } else {
+        break;
+      }
+    }
+    // Keep advancing until champion is decided
+    while (tournament.bracket.filter(b => b.alive).length > 1) {
+      tournament.advanceRound();
+      const matchups = tournament.matchups;
+      for (const m of matchups) {
+        if (!m.fought) {
+          tournament.simulateMatch(m);
+        }
+      }
+    }
+    tournament.advanceRound(); // triggers 'champion' phase
+  }
 }
 
 // ============================================================
