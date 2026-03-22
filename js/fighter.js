@@ -12,7 +12,8 @@ const STATES = {
   SHOVE: 'shove',
   CLINCH: 'clinch',
   SLIP: 'slip',
-  KO: 'ko'
+  KO: 'ko',
+  CELEBRATE: 'celebrate'
 };
 
 class Fighter {
@@ -78,7 +79,7 @@ class Fighter {
     // Derived stats
     this.maxHealth = MAX_HEALTH * (0.8 + this.traits.toughness * 0.4);
     this.health = this.maxHealth;
-    this.baseMoveSpeed = 1.2 + this.traits.speed * 0.8;
+    this.baseMoveSpeed = T('BASE_MOVE_SPEED_MIN', 1.2) + this.traits.speed * T('BASE_MOVE_SPEED_RANGE', 0.8);
     this.damageMult = 0.7 + this.traits.power * 0.6;
 
     // Phase 2: Stamina
@@ -156,6 +157,11 @@ class Fighter {
     this.hitboxActive = false;
     this.hitRegistered = false; // prevent multi-hit per swing
     this.hitTargets = new Set();
+
+    // Idle variety — not every NPC plays the dedicated idle animation
+    // Some just stand on walk frame 0 for a more natural yard feel
+    // Player always uses idle if available; NPCs ~40% chance
+    this.useIdleAnim = (this.charDef.idle && this.charDef.idleFrames > 0) ? Math.random() < 0.4 : false;
   }
 
   _derivePersonality() {
@@ -182,18 +188,54 @@ class Fighter {
     if (this.heat > 0) spd *= (1 + (this.heat / HEAT_MAX) * HEAT_SPEED_BONUS);
     // Wobble slows you down
     if (this.wobbleTimer > 0) spd *= WOBBLE_SPEED_MULT;
+    // Degradation — beaten fighters slow down (32-bit tunable)
+    if (T('DEGRADATION_ENABLED', false)) {
+      const healthPct = this.health / this.maxHealth;
+      const injuryPct = Math.min(1, this.injuries / 100);
+      // Health loss: gradual slowdown, up to 25% slower at near-death
+      if (healthPct < 0.7) {
+        const healthDrag = (1 - healthPct) * T('DEGRADATION_SPEED_LOSS', 0.25);
+        spd *= (1 - healthDrag);
+      }
+      // Injuries compound: accumulated damage makes you sluggish
+      if (injuryPct > 0.3) {
+        spd *= (1 - (injuryPct - 0.3) * T('DEGRADATION_INJURY_DRAG', 0.15));
+      }
+      // Each knockdown takes a permanent toll
+      if (this.knockdownCount > 0) {
+        spd *= (1 - this.knockdownCount * T('DEGRADATION_KD_PENALTY', 0.06));
+      }
+    }
     return spd;
+  }
+
+  // Degradation factor for animation speed — beaten fighters punch slower
+  get degradationMult() {
+    if (!T('DEGRADATION_ENABLED', false)) return 1;
+    const healthPct = this.health / this.maxHealth;
+    const injuryPct = Math.min(1, this.injuries / 100);
+    let mult = 1;
+    // Below 50% health: attacks get sluggish (up to 20% slower)
+    if (healthPct < 0.5) {
+      mult += (1 - healthPct * 2) * T('DEGRADATION_ATTACK_SLOW', 0.2);
+    }
+    // Injuries: accumulated damage slows wind-up
+    if (injuryPct > 0.4) {
+      mult += (injuryPct - 0.4) * 0.15;
+    }
+    return mult; // >1 means slower (multiplied into anim timer)
   }
   get isActing() {
     return this.state === STATES.JAB || this.state === STATES.HOOK || this.state === STATES.SHOVE ||
            this.state === STATES.HIT || this.state === STATES.KNOCKDOWN ||
            this.state === STATES.GETUP || this.state === STATES.CLINCH || this.state === STATES.KO ||
-           this.state === STATES.SLIP || this.isStaggered;
+           this.state === STATES.SLIP || this.state === STATES.CELEBRATE || this.isStaggered;
   }
   get canMove() {
     if (this.state === STATES.HIT || this.state === STATES.KNOCKDOWN ||
         this.state === STATES.GETUP || this.state === STATES.KO ||
-        this.state === STATES.CLINCH || this.state === STATES.SLIP) return false;
+        this.state === STATES.CLINCH || this.state === STATES.SLIP ||
+        this.state === STATES.CELEBRATE) return false;
     if (this.isStaggered) return false;
     return true;
   }
@@ -236,6 +278,10 @@ class Fighter {
       this.inputBuffer = null;
       this.inputBufferTimer = 0;
     }
+    // Random idle phase offset — prevent fighters from syncing up
+    if (newState === STATES.IDLE) {
+      this.animTimer = Math.random() * 800;
+    }
   }
 
   // Batch 5: Smart lunge — scales by distance, no lunge if already close
@@ -245,8 +291,9 @@ class Fighter {
       return;
     }
     const d = Math.hypot(this.target.x - this.x, this.target.y - this.y);
-    if (d < LUNGE_MIN_DIST) return; // already in their face, no lunge
-    const scale = Math.min(1, (d - LUNGE_MIN_DIST) / (LUNGE_MAX_DIST - LUNGE_MIN_DIST));
+    const lungeMin = T('LUNGE_MIN_DIST', LUNGE_MIN_DIST);
+    if (d < lungeMin) return; // already in their face, no lunge
+    const scale = Math.min(1, (d - lungeMin) / (LUNGE_MAX_DIST - lungeMin));
     const dir = Math.atan2(this.target.y - this.y, this.target.x - this.x);
     this.vx += Math.cos(dir) * force * scale;
     this.vy += Math.sin(dir) * force * scale;
@@ -263,7 +310,7 @@ class Fighter {
     this.setState(STATES.JAB);
     this.lastAttackMoveMult = MOVE_DEFS.jab.moveSpeedMult;
     this.lastAttackHit = false;
-    this._applyLunge(LUNGE_FORCE_JAB);
+    this._applyLunge(T('LUNGE_FORCE_JAB', LUNGE_FORCE_JAB));
   }
 
   hook() {
@@ -276,7 +323,7 @@ class Fighter {
     this.setState(STATES.HOOK);
     this.lastAttackMoveMult = MOVE_DEFS.hook.moveSpeedMult;
     this.lastAttackHit = false;
-    this._applyLunge(LUNGE_FORCE_HOOK);
+    this._applyLunge(T('LUNGE_FORCE_HOOK', LUNGE_FORCE_HOOK));
   }
 
   block() {
@@ -395,7 +442,31 @@ class Fighter {
     this.isDown = true;
     this.getupTaps = 0;
     this.setState(STATES.KNOCKDOWN);
-    this.knockdownTimer = KNOCKDOWN_DURATION;
+
+    // Variable knockdown duration — condition-based, not a metronome
+    const baseKD = T('KNOCKDOWN_DURATION_BASE', KNOCKDOWN_DURATION);
+    let kdDuration = baseKD;
+    if (T('KNOCKDOWN_VARIATION', false)) {
+      const healthPct = this.health / this.maxHealth;
+      const injuryPct = Math.min(1, this.injuries / 100);
+      // Each prior knockdown adds time on the ground
+      kdDuration += this.knockdownCount * T('KD_PER_KNOCKDOWN_ADD', 400);
+      // Low health = longer recovery
+      if (healthPct < 0.5) {
+        kdDuration += (1 - healthPct * 2) * T('KD_LOW_HEALTH_ADD', 600);
+      }
+      // Injuries compound
+      kdDuration += injuryPct * T('KD_INJURY_ADD', 300);
+      // Toughness helps you bounce back
+      kdDuration -= this.traits.toughness * T('KD_TOUGHNESS_REDUCE', 400);
+      // Random variance — sometimes you surprise everyone
+      kdDuration += randRange(-T('KD_RANDOM_RANGE', 300), T('KD_RANDOM_RANGE', 300));
+      // Clamp to reasonable bounds
+      kdDuration = clamp(kdDuration, T('KD_MIN_DURATION', 800), T('KD_MAX_DURATION', 4000));
+    }
+    this.knockdownTimer = kdDuration;
+    this.currentKDDuration = kdDuration; // store for time-on-ground calculation
+    this._aiTapTimer = 0; // reset AI get-up tap timer
     this.vx = 0; this.vy = 0;
 
     // Variable AI get-up delay based on condition
@@ -409,14 +480,14 @@ class Fighter {
 
       if (willToGetUp < 0.15) {
         // Too broken — AI stays down, will time out to KO
-        this.aiGetupDelay = KNOCKDOWN_DURATION + 999; // won't try
+        this.aiGetupDelay = kdDuration + 999; // won't try
       } else {
         // Variable timing: tough fighters get up faster, hurt fighters struggle
-        const fastest = KNOCKDOWN_DURATION * 0.25;
-        const slowest = KNOCKDOWN_DURATION * 0.8;
+        const fastest = kdDuration * 0.25;
+        const slowest = kdDuration * 0.8;
         this.aiGetupDelay = lerp(slowest, fastest, willToGetUp);
         // Add randomness so it doesn't feel robotic
-        this.aiGetupDelay += randRange(-200, 300);
+        this.aiGetupDelay += randRange(-200, 400);
       }
     }
 
@@ -590,21 +661,25 @@ class Fighter {
 
   getHitbox() {
     if (!this.hitboxActive) return null;
-    const reach = PUNCH_REACH;
+    const reach = T('PUNCH_REACH', PUNCH_REACH);
+    const pw = T('PUNCH_WIDTH', PUNCH_WIDTH);
+    const ph = T('PUNCH_HEIGHT', PUNCH_HEIGHT);
     return {
-      x: this.x + this.facing * reach - PUNCH_WIDTH / 2,
-      y: this.y - PUNCH_HEIGHT / 2,
-      w: PUNCH_WIDTH,
-      h: PUNCH_HEIGHT
+      x: this.x + this.facing * reach - pw / 2,
+      y: this.y - ph / 2,
+      w: pw,
+      h: ph
     };
   }
 
   getHurtbox() {
+    const hw = T('HURTBOX_W', 28);
+    const hh = T('HURTBOX_H', 32);
     return {
-      x: this.x - 14,
-      y: this.y - 16,
-      w: 28,
-      h: 32
+      x: this.x - hw / 2,
+      y: this.y - hh / 2,
+      w: hw,
+      h: hh
     };
   }
 
@@ -723,17 +798,19 @@ class Fighter {
     if (this.state === STATES.KNOCKDOWN && this.isDown) {
       this.knockdownTimer -= dt;
       // AI variable get-up — timing depends on condition/willpower
+      // Uses a tap interval so AI "struggles" visibly instead of popping right up
       if (!this.isPlayer) {
-        const timeOnGround = KNOCKDOWN_DURATION - this.knockdownTimer;
+        const timeOnGround = (this.currentKDDuration || KNOCKDOWN_DURATION) - this.knockdownTimer;
         if (timeOnGround >= this.aiGetupDelay) {
-          // AI tries to get up — simulate effort (not instant)
-          this.attemptGetUp();
-          // Stagger the attempts so it looks like struggling
-          if (timeOnGround > this.aiGetupDelay + 100) this.attemptGetUp();
-          if (timeOnGround > this.aiGetupDelay + 200) this.attemptGetUp();
-          if (timeOnGround > this.aiGetupDelay + 300) {
+          // Initialize tap timer on first attempt
+          if (!this._aiTapTimer) this._aiTapTimer = 0;
+          this._aiTapTimer -= dt;
+          if (this._aiTapTimer <= 0) {
             this.attemptGetUp();
-            this.attemptGetUp();
+            // Interval between taps — struggling fighters are slower
+            const baseTapInterval = 180; // ms between each "mash" attempt
+            const conditionPenalty = (1 - (this.health / this.maxHealth)) * 120; // hurt = slower taps
+            this._aiTapTimer = baseTapInterval + conditionPenalty + randRange(-40, 60);
           }
         }
       }
@@ -846,7 +923,7 @@ class Fighter {
       } else {
         // Interpolate friction: starts loose (body flies), ends heavy (brakes)
         const t = this.knockbackTimer / this.knockbackDuration;
-        friction = lerp(KB_FRICTION_START, KB_FRICTION_END, t * t); // quadratic ramp to heavy braking
+        friction = lerp(T('KB_FRICTION_START', KB_FRICTION_START), KB_FRICTION_END, t * t); // quadratic ramp to heavy braking
       }
     } else {
       friction = 0.85;
@@ -857,8 +934,21 @@ class Fighter {
     let moveMult = 1;
     if (this.isStaggered) moveMult *= STAGGER_SPEED_MULT;
     if (this.wobbleTimer > 0) moveMult *= WOBBLE_SPEED_MULT;
-    this.x += this.vx * moveMult * dt / 16;
-    this.y += this.vy * moveMult * dt / 16;
+    // Degradation stumble — hurt fighters randomly hitch while walking
+    let stumbleMult = 1;
+    if (T('DEGRADATION_ENABLED', false) && this.state === STATES.WALK && this.alive) {
+      const healthPct = this.health / this.maxHealth;
+      const injuryPct = Math.min(1, this.injuries / 100);
+      const stumbleMul = T('DEGRADATION_STUMBLE_MULT', 1);
+      const stumbleChance = ((healthPct < 0.4 ? (1 - healthPct) * 0.008 : 0) +
+                            (injuryPct > 0.5 ? (injuryPct - 0.5) * 0.006 : 0) +
+                            this.knockdownCount * 0.003) * stumbleMul;
+      if (Math.random() < stumbleChance) {
+        stumbleMult = randRange(0.1, 0.4); // momentary hitch
+      }
+    }
+    this.x += this.vx * moveMult * stumbleMult * dt / 16;
+    this.y += this.vy * moveMult * stumbleMult * dt / 16;
     this.vx *= friction;
     this.vy *= friction;
     if (Math.abs(this.vx) < 0.01) this.vx = 0;
@@ -890,39 +980,69 @@ class Fighter {
     }
 
     // State-specific animation updates
+    // Per-character anim speed: use charDef.animSpeeds if available, else global constant
+    const _as = this.charDef.animSpeeds || {};
     switch (this.state) {
-      case STATES.IDLE:
-        this._updateAnim(dt, ANIM_IDLE_SPD, 2, true);
+      case STATES.IDLE: {
+        const hasIdle = this.charDef.idle && this.charDef.idleFrames > 0;
+        if (hasIdle && (this.isPlayer || this.useIdleAnim)) {
+          // Dedicated idle animation (south-facing breathing, etc.)
+          const idleSpd = _as.idle || ANIM_IDLE_SPD;
+          this._updateAnim(dt, idleSpd, this.charDef.idleFrames, true);
+        } else {
+          // Stand still on walk frame 0 — just the idle breathing handles visual
+          this.animFrame = 0;
+        }
         break;
+      }
       case STATES.WALK:
-        this._updateAnim(dt, ANIM_WALK_SPD, this.charDef.walkFrames, true);
+        this._updateAnim(dt, _as.walk || T('ANIM_WALK_SPD', ANIM_WALK_SPD), this.charDef.walkFrames, true);
         break;
       case STATES.JAB:
-        this._updateAttackAnim(dt, ANIM_JAB_SPD, this.charDef.jabFrames, 'jab');
+        this._updateAttackAnim(dt, _as.jab || ANIM_JAB_SPD, this.charDef.jabFrames, 'jab');
         break;
       case STATES.HOOK:
-        this._updateAttackAnim(dt, ANIM_HOOK_SPD, this.charDef.hookFrames, 'hook');
+        this._updateAttackAnim(dt, _as.hook || ANIM_HOOK_SPD, this.charDef.hookFrames, 'hook');
         break;
-      case STATES.SHOVE:
-        this._updateAttackAnim(dt, ANIM_JAB_SPD, this.charDef.jabFrames, 'shove');
+      case STATES.SHOVE: {
+        const shvFC = this.charDef.shoveFrames || this.charDef.jabFrames;
+        this._updateAttackAnim(dt, _as.shove || ANIM_JAB_SPD, shvFC, 'shove');
         break;
+      }
       case STATES.BLOCK:
         this.animFrame = Math.min(2, this.charDef.blockFrames > 0 ? 2 : 0);
         break;
-      case STATES.HIT:
-        this._updateAnim(dt, ANIM_HIT_SPD, this.charDef.hitFrames, false);
-        if (this.animFrame >= this.charDef.hitFrames - 1 && this.stateTimer > ANIM_HIT_SPD * this.charDef.hitFrames) {
+      case STATES.HIT: {
+        const hitSpd = _as.hit || ANIM_HIT_SPD;
+        this._updateAnim(dt, hitSpd, this.charDef.hitFrames, false);
+        if (this.animFrame >= this.charDef.hitFrames - 1 && this.stateTimer > hitSpd * this.charDef.hitFrames) {
           this.setState(STATES.IDLE);
         }
         break;
-      case STATES.KNOCKDOWN:
-        this._updateAnim(dt, 100, this.charDef.hitFrames, false);
-        if (this.stateTimer > 800) this.setState(STATES.IDLE);
+      }
+      case STATES.KNOCKDOWN: {
+        const dieFC = (this.charDef.die && this.charDef.dieFrames > 0) ? this.charDef.dieFrames : this.charDef.hitFrames;
+        this._updateAnim(dt, _as.die || 100, dieFC, false);
+        // Stay in KNOCKDOWN state — the knockdown timer + attemptGetUp handle the transition.
+        // Clamp to last frame so the sprite stays on the ground.
+        if (this.animFrame >= dieFC - 1) this.animFrame = dieFC - 1;
         break;
-      case STATES.KO:
-        this.animFrame = Math.max(0, this.charDef.hitFrames - 1);
+      }
+      case STATES.KO: {
+        // Play die animation if available, otherwise freeze on last hit frame
+        if (this.charDef.die && this.charDef.dieFrames > 0) {
+          this._updateAnim(dt, _as.die || 80, this.charDef.dieFrames, false);
+        } else {
+          this.animFrame = Math.max(0, this.charDef.hitFrames - 1);
+        }
         this.koTimer -= dt;
         break;
+      }
+      case STATES.CELEBRATE: {
+        const celFC = (this.charDef.celebrate && this.charDef.celebrateFrames > 0) ? this.charDef.celebrateFrames : this.charDef.walkFrames;
+        this._updateAnim(dt, _as.celebrate || 100, celFC, true);
+        break;
+      }
       case STATES.SLIP:
         // Use walk frame 0 (ducking pose) — visually the sprite squishes down
         this.animFrame = 0;
@@ -944,23 +1064,27 @@ class Fighter {
   }
 
   _updateAttackAnim(dt, speed, frameCount, attackType) {
+    // Degradation: beaten fighters swing slower
+    const effectiveSpeed = speed * this.degradationMult;
     this.animTimer += dt;
-    if (this.animTimer >= speed) {
+    if (this.animTimer >= effectiveSpeed) {
       this.animTimer -= speed;
       this.animFrame++;
 
       if (this.animFrame >= frameCount) {
         // Phase 1C: Set recovery cooldown based on attack type
-        this.recoveryCooldown = MOVE_DEFS[attackType] ? MOVE_DEFS[attackType].recovery :
-          (attackType === 'hook' ? HOOK_RECOVERY_MS : JAB_RECOVERY_MS);
+        this.recoveryCooldown = attackType === 'hook' ? T('HOOK_RECOVERY_MS', HOOK_RECOVERY_MS) :
+          attackType === 'shove' ? (MOVE_DEFS.shove ? MOVE_DEFS.shove.recovery : 200) :
+          T('JAB_RECOVERY_MS', JAB_RECOVERY_MS);
         // Batch 4: Whiff backstep — drift backward on miss
         if (!this.lastAttackHit && attackType !== 'shove') {
           SFX.whiff();
           const backstepDir = this.target ?
             Math.atan2(this.y - this.target.y, this.x - this.target.x) :
             (this.facing === 1 ? Math.PI : 0);
-          this.vx += Math.cos(backstepDir) * WHIFF_BACKSTEP;
-          this.vy += Math.sin(backstepDir) * WHIFF_BACKSTEP;
+          const whiffForce = T('WHIFF_BACKSTEP', WHIFF_BACKSTEP);
+          this.vx += Math.cos(backstepDir) * whiffForce;
+          this.vy += Math.sin(backstepDir) * whiffForce;
         }
         this._isCounterAttack = false;
         this.setState(STATES.IDLE);
@@ -983,24 +1107,22 @@ class Fighter {
     }
     const drawY = this.y + this.bounceY + breathOffset; // Phase 1B: vertical bounce offset + breathing
 
-    // Shadow — dark ellipse under feet
-    if (this.alive || this.state === STATES.KO) {
-      const shadowAlpha = this.state === STATES.KO ? 0.12 : 0.2;
-      const shadowScale = this.state === STATES.KNOCKDOWN ? 1.3 : 1;
-      ctx.globalAlpha = shadowAlpha;
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.ellipse(Math.floor(this.x), Math.floor(this.y + FRAME_H * SCALE / 2 - 2), 16 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
+    // Cache sprite mode values for this draw call
+    const fw = SM().FRAME_W, fh = SM().FRAME_H, sc = SM().SCALE;
+    const displayH = fh * sc; // on-screen sprite height (~64px)
 
     // Determine which sprite sheet to use
     let sheetKey, frameCount;
     switch (this.state) {
       case STATES.IDLE:
-        sheetKey = this.charDef.walk;
-        frameCount = this.charDef.walkFrames;
+        // Use dedicated idle sheet if this fighter uses it (player always, NPCs ~40%)
+        if ((this.isPlayer || this.useIdleAnim) && this.charDef.idle && this.charDef.idleFrames > 0) {
+          sheetKey = this.charDef.idle;
+          frameCount = this.charDef.idleFrames;
+        } else {
+          sheetKey = this.charDef.walk;
+          frameCount = this.charDef.walkFrames;
+        }
         break;
       case STATES.WALK:
         sheetKey = this.charDef.walk;
@@ -1015,18 +1137,37 @@ class Fighter {
         frameCount = this.charDef.hookFrames;
         break;
       case STATES.SHOVE:
-        sheetKey = this.charDef.jab;
-        frameCount = this.charDef.jabFrames;
+        // Use dedicated shove sheet if available, otherwise fall back to jab
+        sheetKey = this.charDef.shove || this.charDef.jab;
+        frameCount = this.charDef.shoveFrames || this.charDef.jabFrames;
         break;
       case STATES.BLOCK:
         sheetKey = this.charDef.block || this.charDef.walk;
         frameCount = this.charDef.blockFrames || this.charDef.walkFrames;
         break;
       case STATES.HIT:
-      case STATES.KNOCKDOWN:
-      case STATES.KO:
         sheetKey = this.charDef.hit;
         frameCount = this.charDef.hitFrames;
+        break;
+      case STATES.KNOCKDOWN:
+      case STATES.KO:
+        // Use dedicated die sheet if available, otherwise hit
+        if (this.charDef.die && this.charDef.dieFrames > 0) {
+          sheetKey = this.charDef.die;
+          frameCount = this.charDef.dieFrames;
+        } else {
+          sheetKey = this.charDef.hit;
+          frameCount = this.charDef.hitFrames;
+        }
+        break;
+      case STATES.CELEBRATE:
+        if (this.charDef.celebrate && this.charDef.celebrateFrames > 0) {
+          sheetKey = this.charDef.celebrate;
+          frameCount = this.charDef.celebrateFrames;
+        } else {
+          sheetKey = this.charDef.walk;
+          frameCount = this.charDef.walkFrames;
+        }
         break;
       case STATES.SLIP:
         sheetKey = this.charDef.walk;
@@ -1040,11 +1181,26 @@ class Fighter {
     const sheet = assets[sheetKey];
     if (!sheet) return;
 
+    // Shadow — small subtle ellipse at feet, drawn BEFORE sprite so it's underneath
+    if (this.alive || this.state === STATES.KO) {
+      const shadowAlpha = this.state === STATES.KO ? 0.08 : 0.12;
+      const shadowSc = this.state === STATES.KNOCKDOWN ? 1.4 : 1;
+      const shadowW = (displayH * 0.16) * shadowSc; // narrower — just a ground contact hint
+      const shadowH = (displayH * 0.045) * shadowSc; // very flat
+      ctx.globalAlpha = shadowAlpha;
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      // Position at the very bottom of the sprite (feet), +2 so it peeks just below
+      ctx.ellipse(Math.floor(this.x), Math.floor(this.y + displayH / 2 + 2), shadowW, shadowH, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
     const frame = clamp(this.animFrame, 0, frameCount - 1);
-    const srcX = frame * FRAME_W;
+    const srcX = frame * fw;
     const srcY = 0;
-    const srcW = FRAME_W;
-    const srcH = Math.min(FRAME_H, sheet.height);
+    const srcW = fw;
+    const srcH = Math.min(fh, sheet.height);
 
     ctx.save();
     ctx.translate(Math.floor(drawX), Math.floor(drawY));
@@ -1063,7 +1219,7 @@ class Fighter {
     if (this.state === STATES.KNOCKDOWN) {
       ctx.globalAlpha = 0.8;
       ctx.scale(1, 0.35); // flatten vertically
-      ctx.translate(0, FRAME_H * SCALE * 0.8); // shift down
+      ctx.translate(0, displayH * 0.8); // shift down
     }
 
     // Batch 1: Get-up animation — stretching back up
@@ -1071,15 +1227,31 @@ class Fighter {
       const t = Math.min(1, this.stateTimer / 400);
       const yScale = 0.35 + t * 0.65;
       ctx.scale(1, yScale);
-      ctx.translate(0, FRAME_H * SCALE * (1 - yScale) * 0.5);
+      ctx.translate(0, displayH * (1 - yScale) * 0.5);
     }
 
     // Batch 4: Slip — duck down, squish sprite to show dodging
     if (this.state === STATES.SLIP) {
       const slipT = 1 - (this.slipTimer / SLIP_DURATION); // 0→1
       const duckAmount = Math.sin(slipT * Math.PI); // smooth arc: up→duck→up
-      ctx.scale(1.15, 1 - duckAmount * 0.4); // widen slightly, squish down 40%
-      ctx.translate(0, FRAME_H * SCALE * duckAmount * 0.35); // shift down
+      // 32-bit sprites are more detailed — less extreme squish looks better
+      const squishAmount = T('SLIP_SQUISH', 0.4);
+      const widenAmount = T('SLIP_WIDEN', 1.15);
+      ctx.scale(widenAmount, 1 - duckAmount * squishAmount);
+      ctx.translate(0, displayH * duckAmount * (squishAmount * 0.875)); // shift down proportionally
+    }
+
+    // Degradation sway — hurt fighters lean/sway while idle or walking
+    if (T('DEGRADATION_SWAY', false) && this.alive &&
+        (this.state === STATES.IDLE || this.state === STATES.WALK) &&
+        this.state !== STATES.KO && this.state !== STATES.KNOCKDOWN) {
+      const healthPct = this.health / this.maxHealth;
+      if (healthPct < 0.5) {
+        const swayIntensity = (1 - healthPct * 2) * 0.06; // up to ~3.4 degrees at near-death
+        const swayFreq = 0.003 + (1 - healthPct) * 0.002; // faster sway when more hurt
+        const sway = Math.sin(Date.now() * swayFreq + this.x * 0.1) * swayIntensity;
+        ctx.rotate(sway);
+      }
     }
 
     // Flip for facing direction
@@ -1088,13 +1260,13 @@ class Fighter {
     }
 
     // Draw sprite centered
-    const dw = FRAME_W * SCALE;
-    const dh = srcH * SCALE;
+    const dw = fw * sc;
+    const dh = srcH * sc;
     ctx.drawImage(sheet, srcX, srcY, srcW, srcH, -dw/2, -dh/2, dw, dh);
 
-    // Phase 4: Injury tint overlay — reddish bruising
-    if (this.injuries > 25) {
-      const injAlpha = Math.min(0.3, (this.injuries - 25) / 200);
+    // Phase 4: Injury tint overlay — reddish bruising (amplified for 32-bit)
+    if (this.injuries > 15) {
+      const injAlpha = Math.min(0.4, (this.injuries - 15) / 150);
       ctx.globalAlpha = injAlpha;
       ctx.fillStyle = '#880022';
       ctx.fillRect(-dw/2, -dh/2, dw, dh);
@@ -1139,7 +1311,7 @@ class Fighter {
       // Draw small wobble lines above head
       ctx.strokeStyle = `rgba(255,220,100,${0.3 * wobbleIntensity})`;
       ctx.lineWidth = 1;
-      const wy = drawY - FRAME_H * SCALE / 2 - 14;
+      const wy = drawY - displayH / 2 - 14;
       ctx.beginPath();
       ctx.moveTo(drawX - 8 + sway, wy);
       ctx.quadraticCurveTo(drawX + sway * 2, wy - 3, drawX + 8 + sway, wy);
@@ -1217,7 +1389,7 @@ class Fighter {
     const barW = 40;
     const barH = 4;
     const bx = this.x - barW / 2;
-    const by = this.y - FRAME_H * SCALE / 2 - 8;
+    const by = this.y - SM().FRAME_H * SM().SCALE / 2 - 8;
     const healthPct = this.health / this.maxHealth;
 
     // Background

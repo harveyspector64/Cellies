@@ -77,15 +77,15 @@ const LOW_STAMINA_DAMAGE_MULT = 0.6;
 // Knockdown system — Batch 1 (reworked Batch 3)
 const KNOCKDOWN_THRESHOLD = 0.25;   // health % that triggers knockdown chance
 const KNOCKDOWN_HOOK_CHANCE = 0.35; // chance hook causes knockdown (scales with damage)
-const KNOCKDOWN_DURATION = 1500;     // ms on the ground
+const KNOCKDOWN_DURATION = 2000;     // ms on the ground (was 1500)
 const GETUP_WINDOW = 1200;          // ms player has to mash to get up
 const GETUP_TAPS_NEEDED = 4;        // taps needed to get up (increases per knockdown)
 const MAX_KNOCKDOWNS = 3;           // 3 knockdowns = TKO
-const KNOCKDOWN_HEALTH_RECOVERY = 0.05; // recover 5% max health on get-up (fighting spirit)
+const KNOCKDOWN_HEALTH_RECOVERY = 0.15; // recover 15% max health on get-up (fighting spirit)
 // Knockdown rework — instant KO + wobble
-const INSTANT_KO_BASE_CHANCE = 0.15;   // base chance of instant KO when health<=0
-const INSTANT_KO_HOOK_BONUS = 0.25;    // extra chance for hooks
-const INSTANT_KO_OVERKILL_SCALE = 0.4; // scales with overkill damage
+const INSTANT_KO_BASE_CHANCE = 0.06;   // base chance of instant KO when health<=0 (was 0.15)
+const INSTANT_KO_HOOK_BONUS = 0.12;    // extra chance for hooks (was 0.25)
+const INSTANT_KO_OVERKILL_SCALE = 0.3; // scales with overkill damage (was 0.4)
 const WOBBLE_DURATION = 1800;          // ms of post-knockdown wobble
 const WOBBLE_SPEED_MULT = 0.45;        // speed during wobble
 

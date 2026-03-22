@@ -23,52 +23,51 @@ function gameLoop(timestamp) {
       const player = game.fighters.find(f => f.isPlayer);
       const playerWon = player && player.alive && player.state !== STATES.KO;
       if (playerWon) {
-        game.announcer.show('ADVANCING', 'ENTER: Continue', 999999);
+        // Check if this was the final match
+        const alive = tournament.bracket.filter(b => b.alive && !b.isPlayer);
+        const remainingAfterThis = alive.filter(b => {
+          const m = tournament.matchups.find(m2 => (m2.a === b || m2.b === b));
+          return !m || m.winner !== b; // still alive after this round resolves
+        });
+        const isFinal = tournament.round >= 2;
+        game.announcer.show(isFinal ? 'YARD CHAMPION!' : 'ADVANCING', 'ENTER: Continue', 999999);
       } else {
         game.announcer.show('ELIMINATED', 'ENTER: See Results', 999999);
       }
     }
 
-    // Global input — pause
-    if (input.wasPressed('Escape') && !game.gameOver) {
+    // Global input — ESC opens pause menu (works anytime during a match)
+    if (input.wasPressed('Escape')) {
       gameState = 'paused';
       pauseOverlay.style.display = 'flex';
+      _updatePauseButtons();
+      input.justPressed['Escape'] = false; // consume — don't let pause handler see it this frame
     }
-    // Restart (not in tournament — no do-overs)
-    if (input.wasPressed('KeyR') && !tournament) {
-      restartGame();
-    }
-    // Tournament: Enter or Q to leave fight when game over
-    if (tournament && game.gameOver && game.gameOverTimer > 1500) {
-      if (input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('KeyQ')) {
-        _tournamentFightEnded();
+    // Game over controls (only when fight is settled)
+    if (game.gameOver && game.gameOverTimer > 1500) {
+      if (tournament) {
+        if (input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('KeyQ')) {
+          _tournamentFightEnded();
+        }
+      } else {
+        if (input.wasPressed('KeyR')) restartGame();
+        if (input.wasPressed('KeyQ')) quitToMenu();
       }
     }
-    // Normal: Q to quit
-    if (!tournament && input.wasPressed('KeyQ') && game.gameOver) {
-      quitToMenu();
-    }
   }
-
-  // Pause menu keyboard controls
-  if (gameState === 'paused') {
+  // Pause menu keyboard controls (else-if: only runs if NOT in playing state)
+  else if (gameState === 'paused') {
     if (input.wasPressed('Escape')) {
       resumeGame();
-    }
-    if (input.wasPressed('Enter') || input.wasPressed('KeyQ')) {
+    } else if (input.wasPressed('Enter') || input.wasPressed('KeyQ')) {
       if (tournament) {
-        // In tournament, quitting a fight = forfeit
-        pauseOverlay.style.display = 'none';
-        gameState = 'playing';
-        // Force player KO to trigger elimination
-        if (game && game.player && game.player.alive) {
-          game.player.health = 0;
-          game.player.alive = false;
-          game.player.setState(STATES.KO);
-        }
+        _forfeitTournament();
       } else {
         quitToMenu();
       }
+    } else if (input.wasPressed('KeyR') && !tournament) {
+      pauseOverlay.style.display = 'none';
+      restartGame();
     }
   }
 
@@ -113,19 +112,44 @@ function selectGang(el) {
   selectedGang = el.dataset.gang;
 }
 
+// Graphics mode toggle — 16-bit / 32-bit
+function setSpriteMode(mode) {
+  if (spriteMode === mode) return;
+  spriteMode = mode;
+
+  // Update toggle button visuals
+  const btn16 = document.getElementById('mode-16');
+  const btn32 = document.getElementById('mode-32');
+  if (btn16 && btn32) {
+    btn16.classList.toggle('selected', mode === '16');
+    btn32.classList.toggle('selected', mode === '32');
+  }
+
+  // Reload assets for the new mode
+  const btns = document.querySelectorAll('#quickstart-section .menu-btn');
+  btns.forEach(b => b.disabled = true);
+
+  // Show loading indicator
+  ctx.fillStyle = '#0a0806';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#c4943a';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOADING...', CANVAS_W / 2, CANVAS_H / 2);
+
+  loadAssets().then(() => {
+    btns.forEach(b => b.disabled = false);
+    console.log(`Switched to ${mode === '32' ? '32-BIT' : '16-BIT'} mode — ${Object.keys(assets).length} assets loaded`);
+  });
+}
+
 function updateMenuHighlight() {
   const btns = document.querySelectorAll('#quickstart-section .menu-btn');
   btns.forEach((b, i) => {
     if (i === menuSelection) {
-      b.style.borderColor = '#c4943a';
-      b.style.color = '#ffd080';
-      b.style.background = '#2a1a0a';
-      b.style.transform = 'scale(1.02)';
+      b.classList.add('selected');
     } else {
-      b.style.borderColor = '#3a2a1a';
-      b.style.color = '#c4943a';
-      b.style.background = '#1a1208';
-      b.style.transform = 'scale(1)';
+      b.classList.remove('selected');
     }
   });
 }
@@ -196,6 +220,30 @@ function restartGame() {
 function resumeGame() {
   gameState = 'playing';
   pauseOverlay.style.display = 'none';
+}
+
+function _updatePauseButtons() {
+  // Dynamically set pause overlay content based on context
+  const isTourney = !!tournament;
+  const isGameOver = game && game.gameOver;
+  pauseOverlay.innerHTML = `
+    <div class="pause-text">${isGameOver ? 'FIGHT OVER' : 'PAUSED'}</div>
+    ${!isGameOver ? '<button class="menu-btn" onclick="resumeGame()">RESUME <span style="font-size:8px;color:#6a5a4a;">[ESC]</span></button>' : ''}
+    ${!isTourney && !isGameOver ? '<button class="menu-btn" onclick="pauseOverlay.style.display=\'none\';restartGame()">RESTART <span style="font-size:8px;color:#6a5a4a;">[R]</span></button>' : ''}
+    <button class="menu-btn" onclick="${isTourney ? '_forfeitTournament()' : 'quitToMenu()'}">
+      ${isTourney ? 'FORFEIT' : 'QUIT TO MENU'} <span style="font-size:8px;color:#6a5a4a;">[ENTER]</span>
+    </button>
+  `;
+}
+
+function _forfeitTournament() {
+  pauseOverlay.style.display = 'none';
+  gameState = 'playing';
+  if (game && game.player && game.player.alive) {
+    game.player.health = 0;
+    game.player.alive = false;
+    game.player.setState(STATES.KO);
+  }
 }
 
 function quitToMenu() {
@@ -418,7 +466,7 @@ function _startTournamentFight(match) {
     opp.traits = { ...oppEntry.traits };
     opp.maxHealth = MAX_HEALTH * (0.8 + oppEntry.traits.toughness * 0.4);
     opp.health = opp.maxHealth;
-    opp.baseMoveSpeed = 1.2 + oppEntry.traits.speed * 0.8;
+    opp.baseMoveSpeed = T('BASE_MOVE_SPEED_MIN', 1.2) + oppEntry.traits.speed * T('BASE_MOVE_SPEED_RANGE', 0.8);
     opp.damageMult = 0.7 + oppEntry.traits.power * 0.6;
   }
 

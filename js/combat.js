@@ -17,7 +17,7 @@ function resolveFighterCollisions(fighters) {
       if (a.inClinch && a.clinchPartner === b) continue;
       if (b.inClinch && b.clinchPartner === a) continue;
       const d = dist(a, b);
-      const minDist = 36;
+      const minDist = T('COLLISION_MIN_DIST', 36);
       if (d < minDist && d > 0) {
         const overlap = (minDist - d) / 2;
         const nx = (b.x - a.x) / d;
@@ -70,6 +70,66 @@ function processCombat(attackers, defenders, particles, camera) {
       if (attacker.hitTargets.has(defender)) continue;
       if (defender.invulnFrames > 0) continue;
 
+      // Ground-and-pound — hit downed fighters to finish them off (TKO)
+      if (defender.state === STATES.KNOCKDOWN && defender.isDown) {
+        const hurtbox = defender.getHurtbox();
+        // Widen hurtbox for downed fighter (they're sprawled out)
+        hurtbox.x -= 6; hurtbox.w += 12;
+        if (!boxOverlap(hitbox, hurtbox)) continue;
+        attacker.hitTargets.add(defender);
+
+        const isHook = attacker.state === STATES.HOOK;
+        const gndDamage = isHook ? 15 : 8; // reduced from standing hits
+        defender.health -= gndDamage;
+
+        // Ragdoll the body
+        const knockDir = Math.atan2(defender.y - attacker.y, defender.x - attacker.x);
+        defender.vx += Math.cos(knockDir) * (isHook ? 4 : 2);
+        defender.vy += Math.sin(knockDir) * (isHook ? 4 : 2);
+        defender.hitFlash = 4;
+
+        // Particles + sound
+        const hitX = (attacker.x + defender.x) / 2 + attacker.facing * 8;
+        const hitY = (attacker.y + defender.y) / 2;
+        particles.blood(hitX, hitY, attacker.facing, isHook ? 0.8 : 0.4);
+        particles.impact(hitX, hitY);
+        if (isHook) { SFX.hookHit(0.6); } else { SFX.punchHit(0.6); }
+        camera.shake(isHook ? 2 : 1, 60, Math.cos(knockDir), Math.sin(knockDir));
+        attacker.hitConfirmTimer = HIT_CONFIRM_DURATION;
+        attacker.lastAttackHit = true;
+
+        // Damage numbers
+        if (game && game.dmgNumbers) {
+          const numY = defender.y - SM().FRAME_H * SM().SCALE / 2 - 12;
+          game.dmgNumbers.add(defender.x, numY, gndDamage, false, isHook);
+        }
+
+        // If health drops to 0 while down — TKO, fight's over
+        if (defender.health <= 0) {
+          defender.health = 0;
+          defender.isDown = false;
+          // Transition to KO WITHOUT resetting animation — stay in downed pose
+          defender.state = STATES.KO;
+          // Don't reset animFrame — keep the last frame of die/knockdown animation
+          defender.koTimer = KO_DURATION;
+          defender.alive = false;
+          defender.hitTargets.clear();
+          // Visceral bounce — body pops up and slams back down
+          defender.bounceVy = -4;  // pop up
+          defender.bounceY = 0;
+          // Big finish effects
+          SFX.koHit();
+          camera.shake(10, 350, Math.cos(knockDir), Math.sin(knockDir));
+          camera.zoomPunch(0.12, 350);
+          if (game) {
+            game.hitFlashAlpha = 0.2;
+            game.announcer.show('TKO!', `${defender.name} couldn't survive`, 2000);
+            particles.bloodPool(defender.x, defender.y + 4);
+          }
+        }
+        continue; // skip normal damage processing
+      }
+
       // Post-KO hits — 1v1/cell: unlimited beating. Riot: 1.5s then scenery
       if (defender.state === STATES.KO) {
         const isRiot = game && game.mode === 'riot';
@@ -110,7 +170,7 @@ function processCombat(attackers, defenders, particles, camera) {
         const jabDodge = !isHook && slipElapsed < 120; // tight window — duck under jab
         if (isHook || jabDodge) {
           if (game && game.dmgNumbers) {
-            game.dmgNumbers.add(defender.x, defender.y - FRAME_H * SCALE / 2 - 12, 0, false, false,
+            game.dmgNumbers.add(defender.x, defender.y - SM().FRAME_H * SM().SCALE / 2 - 12, 0, false, false,
               jabDodge ? 'DUCK!' : 'SLIP!');
           }
           if (game && game.announcer && (defender.isPlayer || attacker.isPlayer)) {
@@ -123,7 +183,10 @@ function processCombat(attackers, defenders, particles, camera) {
 
       const moveDef = isShove ? MOVE_DEFS.shove : (isHook ? MOVE_DEFS.hook : MOVE_DEFS.jab);
       const baseDmg = moveDef.damage;
-      const baseKnock = moveDef.knockback;
+      // Per-mode knockback override
+      const baseKnock = isHook ? T('HOOK_KNOCKBACK', moveDef.knockback) :
+                         isShove ? moveDef.knockback :
+                         T('JAB_KNOCKBACK', moveDef.knockback);
       // Phase 2: low stamina weakens damage
       const staminaMult = attacker.stamina < LOW_STAMINA_THRESHOLD ? LOW_STAMINA_DAMAGE_MULT : 1;
       // Fear weakens the attacker's commitment
@@ -194,14 +257,14 @@ function processCombat(attackers, defenders, particles, camera) {
 
       // Phase 4: Floating damage numbers
       if (game && game.dmgNumbers) {
-        const numY = defender.y - FRAME_H * SCALE / 2 - 12;
+        const numY = defender.y - SM().FRAME_H * SM().SCALE / 2 - 12;
         game.dmgNumbers.add(defender.x, numY, result.damage, result.blocked, isHook && !result.blocked);
       }
 
       // Phase 1A: Asymmetric time-based hitstop
       const isKO = defender.state === STATES.KO;
-      let hitstopMs = moveDef.hitstop;
-      if (isKO) hitstopMs = KO_HITSTOP; // long dramatic freeze on KO
+      let hitstopMs = isHook ? T('HOOK_HITSTOP', moveDef.hitstop) : T('JAB_HITSTOP', moveDef.hitstop);
+      if (isKO) hitstopMs = T('KO_HITSTOP', KO_HITSTOP); // long dramatic freeze on KO
       defender.hitstopDuration = hitstopMs;
       defender.hitstopTimer = 0;
       attacker.hitstopDuration = hitstopMs * HITSTOP_ATTACKER_MULT;
@@ -209,12 +272,12 @@ function processCombat(attackers, defenders, particles, camera) {
 
       // Phase 1B: Set knockback deceleration curve
       if (!result.blocked) {
-        const kbDur = isHook ? KNOCKBACK_DURATION_HOOK : KNOCKBACK_DURATION_JAB;
+        const kbDur = isHook ? T('KNOCKBACK_DURATION_HOOK', KNOCKBACK_DURATION_HOOK) : T('KNOCKBACK_DURATION_JAB', KNOCKBACK_DURATION_JAB);
         defender.knockbackDuration = kbDur;
         defender.knockbackTimer = 0;
         // Vertical bounce on hooks
         if (isHook) {
-          defender.bounceVy = HOOK_VERTICAL_BOUNCE;
+          defender.bounceVy = T('HOOK_VERTICAL_BOUNCE', HOOK_VERTICAL_BOUNCE);
           defender.bounceY = 0;
         }
         // Batch 5: Impact dust at feet
@@ -236,7 +299,9 @@ function processCombat(attackers, defenders, particles, camera) {
         const isInvolved = attacker.isPlayer || defender.isPlayer;
         if (!isInvolved) {
           // Far-away fights cause less screen disruption
-          camScale = clamp(1 - (dToPlayer - 80) / 200, 0.1, 1);
+          const falloff = T('CAMERA_RIOT_SHAKE_FALLOFF', 200);
+          const minShake = T('CAMERA_RIOT_SHAKE_MIN', 0.1);
+          camScale = clamp(1 - (dToPlayer - 80) / falloff, minShake, 1);
         }
       }
 

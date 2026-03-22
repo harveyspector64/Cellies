@@ -46,7 +46,7 @@ class AIController {
         if (p === 'brawler' || p === 'swarmer') sizeUpBase = 500;
         else if (p === 'counterpuncher') sizeUpBase = 1200;
         else if (p === 'coward') sizeUpBase = 1000;
-        this.stateDuration = sizeUpBase + Math.random() * 1200 * (1 - this.difficulty * 0.5);
+        this.stateDuration = sizeUpBase + T('AI_SIZING_UP_ADD', 0) + Math.random() * 1200 * (1 - this.difficulty * 0.5);
         this.strafeDir = Math.random() > 0.5 ? 1 : -1;
         break;
       case AI_STATES.PRESSING:
@@ -102,7 +102,7 @@ class AIController {
     const maxIdx = Math.min(patterns.length - 1, Math.floor(1 + this.difficulty * (patterns.length - 1)));
     this.comboPattern = patterns[randInt(0, maxIdx)];
     this.comboStep = 0;
-    this.comboDelay = 80 + Math.random() * 60;
+    this.comboDelay = T('AI_COMBO_DELAY_BASE', 80) + Math.random() * T('AI_COMBO_DELAY_RANGE', 60);
   }
 
   update(dt, target) {
@@ -253,7 +253,7 @@ class AIController {
       this.strafeDir *= -1;
     }
 
-    const attackRange = 55;
+    const attackRange = T('AI_ATTACK_RANGE', 55);
 
     // Phase 3: Fear affects willingness to press
     const fearMod = f.fear / f.maxFear; // 0-1
@@ -353,7 +353,7 @@ class AIController {
       let approachSpd = 0.6;
       if (p === 'brawler' || p === 'swarmer') approachSpd = 0.75;
       else if (p === 'coward') approachSpd = 0.4;
-      const spd = f.moveSpeed * approachSpd;
+      const spd = f.moveSpeed * approachSpd * T('AI_APPROACH_SPEED_MULT', 1);
       f.vx = Math.cos(ang) * spd;
       f.vy = Math.sin(ang) * spd;
       if (f.state !== STATES.WALK) f.setState(STATES.WALK);
@@ -372,7 +372,7 @@ class AIController {
       if (f.state !== STATES.WALK) f.setState(STATES.WALK);
 
       // Phase 4: More aggressive probing — AI was too passive
-      let probeChance = 0.008 * this.difficulty;
+      let probeChance = 0.008 * this.difficulty * T('AI_PROBE_CHANCE_MULT', 1);
       if (p === 'swarmer') probeChance *= 2;
       if (p === 'brawler') probeChance *= 1.5;
       if (p === 'counterpuncher') probeChance *= 0.5;
@@ -415,7 +415,7 @@ class AIController {
     if (d > attackRange) {
       // Close distance aggressively
       const ang = angle(f, target);
-      const spd = f.moveSpeed * (0.8 + this.difficulty * 0.2);
+      const spd = f.moveSpeed * (0.8 + this.difficulty * 0.2) * T('AI_APPROACH_SPEED_MULT', 1);
       f.vx = Math.cos(ang) * spd;
       f.vy = Math.sin(ang) * spd;
       if (f.state !== STATES.WALK) f.setState(STATES.WALK);
@@ -440,7 +440,7 @@ class AIController {
 
         this.comboStep++;
         // Phase 4: Tighter combo timing — less dead time between hits
-        this.comboDelay = 60 + Math.random() * 80 * (1 - this.difficulty * 0.5);
+        this.comboDelay = T('AI_COMBO_DELAY_BASE', 60) + Math.random() * T('AI_COMBO_DELAY_RANGE', 80) * (1 - this.difficulty * 0.5);
 
         // If combo finished, pick a new one or keep pressing
         if (this.comboStep >= this.comboPattern.length) {

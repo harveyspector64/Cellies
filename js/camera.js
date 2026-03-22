@@ -37,7 +37,7 @@ class Camera {
   setTarget(x, y) { this.targetX = x; this.targetY = y; }
   update(dt) {
     // Smooth follow
-    const followSpeed = this.followFast ? 0.2 : 0.08;
+    const followSpeed = this.followFast ? 0.2 : T('CAMERA_FOLLOW_SPEED', 0.08);
     this.x = lerp(this.x, this.targetX - CANVAS_W / (2 * this.zoom), followSpeed);
     this.y = lerp(this.y, this.targetY - CANVAS_H / (2 * this.zoom), followSpeed);
     // Clamp to world - center if view exceeds world

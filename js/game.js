@@ -214,7 +214,7 @@ class Game {
           // Recalculate derived stats
           fighter.maxHealth = MAX_HEALTH * (0.8 + fighter.traits.toughness * 0.4);
           fighter.health = fighter.maxHealth;
-          fighter.baseMoveSpeed = 1.2 + fighter.traits.speed * 0.8;
+          fighter.baseMoveSpeed = T('BASE_MOVE_SPEED_MIN', 1.2) + fighter.traits.speed * T('BASE_MOVE_SPEED_RANGE', 0.8);
           fighter.damageMult = 0.7 + fighter.traits.power * 0.6;
           this.player = fighter;
         }
@@ -615,16 +615,24 @@ class Game {
         const needH = fd * 0.6 + margin * 2;
         const zoomW = CANVAS_W / Math.max(needW, 300);
         const zoomH = CANVAS_H / Math.max(needH, 200);
-        const targetZoom = clamp(Math.min(zoomW, zoomH), 0.8, 1.8);
+        const zMin = T('CAMERA_1V1_ZOOM_MIN', 0.8);
+        const zMax = T('CAMERA_1V1_ZOOM_MAX', 1.8);
+        const targetZoom = clamp(Math.min(zoomW, zoomH), zMin, zMax);
         this.camera.zoom = lerp(this.camera.zoom, targetZoom, 0.12);
       }
     } else if (this.player) {
+      // Riot/yard mode — follow player with configurable zoom
       this.camera.setTarget(this.player.x, this.player.y);
+      const riotZoom = T('CAMERA_RIOT_ZOOM', 1.0);
+      this.camera.zoom = lerp(this.camera.zoom, riotZoom, 0.04);
     }
     this.camera.update(effectiveDt);
 
     // Check game over
     this._checkGameOver(dt);
+
+    // Post-KO celebration — keep trying until winners transition to celebrate
+    this._updateCelebration();
 
     // Batch 5: Fight narrative announcements
     this._updateAnnouncements(dt);
@@ -920,6 +928,18 @@ class Game {
       }
     }
 
+    // Taunt/celebrate — T key while idle or walking
+    if (input.wasPressed('KeyT') && (p.state === STATES.IDLE || p.state === STATES.WALK) &&
+        p.charDef.celebrate && p.charDef.celebrateFrames > 0) {
+      p.setState(STATES.CELEBRATE);
+    }
+
+    // Cancel taunt on movement or attack (let the player bail out)
+    if (p.state === STATES.CELEBRATE && (mx !== 0 || my !== 0 ||
+        input.wasPressed('KeyJ') || input.wasPressed('KeyK'))) {
+      p.setState(STATES.IDLE);
+    }
+
     // Movement while blocking (slow)
     if (p.state === STATES.BLOCK && (mx !== 0 || my !== 0)) {
       const len = Math.hypot(mx, my);
@@ -992,6 +1012,27 @@ class Game {
     }
   }
 
+  _triggerCelebration() {
+    // Mark that celebration should happen — checked each frame until fighters are ready
+    this._celebrationPending = true;
+  }
+
+  _updateCelebration() {
+    if (!this._celebrationPending || !this.gameOver) return;
+    let allCelebrating = true;
+    for (const f of this.fighters) {
+      if (!f.alive || f.state === STATES.KO || f.state === STATES.KNOCKDOWN) continue;
+      if (f.state === STATES.CELEBRATE) continue;
+      if (f.charDef.celebrate && f.charDef.celebrateFrames > 0 &&
+          (f.state === STATES.IDLE || f.state === STATES.WALK)) {
+        f.setState(STATES.CELEBRATE);
+      } else {
+        allCelebrating = false; // still waiting for this fighter to finish their action
+      }
+    }
+    if (allCelebrating) this._celebrationPending = false;
+  }
+
   _checkGameOver(dt) {
     if (this.gameOver) {
       this.gameOverTimer += dt;
@@ -1009,6 +1050,7 @@ class Game {
         if (!this.announcer.text || this.announcer.life <= 0) {
           this.announcer.show(winner, 'R: Rematch · Q: Menu', 999999);
         }
+        this._triggerCelebration();
       }
     } else if (this.mode === 'custom') {
       // Custom: player KO = loss, all enemies dead = win
@@ -1028,6 +1070,7 @@ class Game {
           this.outroTimer = 0;
           const survived = alliesAlive.length;
           this.announcer.show('CLEARED', `${survived} standing · R: Rematch · Q: Menu`, 999999);
+          this._triggerCelebration();
         } else if (alliesAlive.length === 0) {
           this.gameOver = true;
           this.slowmo = 1500;

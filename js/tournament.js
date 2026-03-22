@@ -292,11 +292,12 @@ function drawTournamentBracket(ctx, tournament) {
     ctx.fillStyle = '#ffd080';
     ctx.fillText('ENTER: STEP UP    Q: WALK AWAY', cx, CANVAS_H - 25);
   } else if (!allDone) {
+    const aiLeft = tournament.matchups.filter(m => !m.fought).length;
     ctx.fillStyle = '#8a7a5a';
-    ctx.fillText('ENTER: NEXT FIGHT', cx, CANVAS_H - 25);
+    ctx.fillText(`ENTER: RESOLVE FIGHT${aiLeft > 1 ? 'S' : ''}    Q: MENU`, cx, CANVAS_H - 25);
   } else {
     ctx.fillStyle = '#ffd080';
-    ctx.fillText('ENTER: NEXT ROUND', cx, CANVAS_H - 25);
+    ctx.fillText('ENTER: NEXT ROUND    Q: MENU', cx, CANVAS_H - 25);
   }
 
   // Scanlines

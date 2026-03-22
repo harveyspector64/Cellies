@@ -81,75 +81,32 @@ function randItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function angle(a, b) { return Math.atan2(b.y - a.y, b.x - a.x); }
 
 // ============================================================
-// ASSET LOADER
+// ASSET LOADER (mode-aware — reads from spritemode.js SM())
 // ============================================================
 const assets = {};
-const ASSET_LIST = {
-  // Inmate01 (White/Woods)
-  'i01_walk':    'inmate01_east_walk-Sheet.png',
-  'i01_jab':     'inmate01_east_rightpunch2big-Sheet.png',
-  'i01_hook':    'inmate01_east_lefthook_sheet.png',
-  'i01_block':   'inmate01_east_block-Sheet.png',
-  'i01_hit':     'inmate01_east_gethit1-Sheet-Sheet.png',
-  'i01_bruised': 'inmate01_east_rightpunch2big_bruised1-Sheet.png',
-  // Inmate02 (Black/BGF)
-  'i02_walk':    'inmate02_black1_walkeast-Sheet.png',
-  'i02_jab':     'inmate02black_east_punchright1-Sheet.png',
-  'i02_hit':     'inmate02_east_gethit-Sheet.png',
-  // Inmate03 (Nortenos)
-  'i03_walk':    'inmate03_east_walk.png',
-  'i03_jab':     'inmate03_punchstab-Sheet.png',
-  'i03_hit':     'inmate03_gethit1-Sheet.png',
-  'i03_block':   'inmate03_east_block-Sheet.png',
-  // Inmate06 Latino (Surenos)
-  'i06l_walk':   'inmate06_latino01_east_walk-Sheet.png',
-  'i06l_jab':    'inmate06_latino01_east_punch-Sheet.png',
-  'i06l_hit':    'inmate06_latino01_east_gethit-Sheet.png',
-  // Inmate06 Black variant
-  'i06b_walk':   'inmate06_black03_east_walk-Sheet.png',
-  // Environment
-  'yard':        'yard64.png',
-};
 
 function loadAssets() {
+  // Clear existing assets
+  for (const key of Object.keys(assets)) delete assets[key];
+
+  const mode = SM();
   const promises = [];
-  for (const [key, path] of Object.entries(ASSET_LIST)) {
-    promises.push(new Promise((resolve, reject) => {
+  for (const [key, filename] of Object.entries(mode.assetList)) {
+    promises.push(new Promise((resolve) => {
       const img = new Image();
       img.onload = () => { assets[key] = img; resolve(); };
-      img.onerror = () => { console.warn('Failed to load:', path); assets[key] = null; resolve(); };
-      img.src = path;
+      img.onerror = () => { console.warn('Failed to load:', mode.assetPath + filename); assets[key] = null; resolve(); };
+      img.src = mode.assetPath + filename;
     }));
   }
   return Promise.all(promises);
 }
 
 // ============================================================
-// CHARACTER DEFINITIONS
+// CHARACTER DEFINITIONS (mode-aware — reads from spritemode.js)
 // ============================================================
-// Maps gang to sprite sets. Each sprite set defines which asset keys to use.
-const CHAR_DEFS = {
-  surenos: [
-    { id: 'sureno_a', walk: 'i06l_walk', jab: 'i06l_jab', hook: 'i06l_jab', hit: 'i06l_hit', block: null,
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0 },
-  ],
-  woods: [
-    { id: 'wood_a', walk: 'i01_walk', jab: 'i01_jab', hook: 'i01_hook', hit: 'i01_hit', block: 'i01_block',
-      walkFrames: 4, jabFrames: 5, hookFrames: 5, hitFrames: 4, blockFrames: 5 },
-  ],
-  bgf: [
-    { id: 'bgf_a', walk: 'i02_walk', jab: 'i02_jab', hook: 'i02_jab', hit: 'i02_hit', block: null,
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0 },
-    { id: 'bgf_b', walk: 'i06b_walk', jab: 'i02_jab', hook: 'i02_jab', hit: 'i02_hit', block: null,
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0 },
-  ],
-  nortenos: [
-    { id: 'norte_a', walk: 'i03_walk', jab: 'i03_jab', hook: 'i03_jab', hit: 'i03_hit', block: 'i03_block',
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 5, blockFrames: 6 },
-  ],
-};
-
 function getCharDef(gang) {
-  const defs = CHAR_DEFS[gang];
+  const defs = SM().charDefs[gang];
+  if (!defs || defs.length === 0) return null;
   return defs[Math.floor(Math.random() * defs.length)];
 }
