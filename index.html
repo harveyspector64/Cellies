@@ -78,7 +78,7 @@
     transition: all 0.1s;
     letter-spacing: 1px;
   }
-  .menu-btn:hover {
+  .menu-btn:hover, .menu-btn.selected {
     background: #2a1a0a;
     border-color: #c4943a;
     color: #ffd080;
@@ -292,6 +292,13 @@
         </div>
       </div>
     </div>
+    <div class="menu-section" style="padding:4px 0;">
+      <div class="menu-section-title">GRAPHICS</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="cfg-btn selected" id="mode-16" onclick="setSpriteMode('16')" style="padding:4px 14px;">16-BIT</button>
+        <button class="cfg-btn" id="mode-32" onclick="setSpriteMode('32')" style="padding:4px 14px;">32-BIT</button>
+      </div>
+    </div>
     <div class="menu-section" id="quickstart-section">
       <div class="menu-section-title">QUICK START</div>
       <button class="menu-btn" onclick="startGame('1v1')">1 V 1 &nbsp; FIGHT</button>
@@ -369,6 +376,7 @@
 
 <!-- JS Modules — load order matters (dependency chain) -->
 <script src="js/constants.js"></script>
+<script src="js/spritemode.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/input.js"></script>

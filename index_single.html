@@ -263,6 +263,118 @@
   }
 </style>
 </head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="ui-overlay">
+  <div id="menu-screen">
+    <h1>YARD</h1>
+    <div class="subtitle">CALIFORNIA STATE PENITENTIARY</div>
+    <div class="menu-section">
+      <div class="menu-section-title">SELECT YOUR SET</div>
+      <div class="gang-select" id="gang-select">
+        <div class="gang-btn selected" data-gang="surenos" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#2a4a9a"></div>
+          <div class="gang-label">SUR 13</div>
+        </div>
+        <div class="gang-btn" data-gang="woods" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#8a8a7a"></div>
+          <div class="gang-label">WOODS</div>
+        </div>
+        <div class="gang-btn" data-gang="bgf" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#2a6a3a"></div>
+          <div class="gang-label">RIDERS</div>
+        </div>
+        <div class="gang-btn" data-gang="nortenos" onclick="selectGang(this)">
+          <div class="gang-color" style="background:#9a2a2a"></div>
+          <div class="gang-label">XIV</div>
+        </div>
+      </div>
+    </div>
+    <div class="menu-section" style="padding:4px 0;">
+      <div class="menu-section-title">GRAPHICS</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="cfg-btn selected" id="mode-16" onclick="setSpriteMode('16')" style="padding:4px 14px;">16-BIT</button>
+        <button class="cfg-btn" id="mode-32" onclick="setSpriteMode('32')" style="padding:4px 14px;">32-BIT</button>
+      </div>
+    </div>
+    <div class="menu-section" id="quickstart-section">
+      <div class="menu-section-title">QUICK START</div>
+      <button class="menu-btn" onclick="startGame('1v1')">1 V 1 &nbsp; FIGHT</button>
+      <button class="menu-btn" onclick="startGame('cell')">CELL &nbsp; FIGHT</button>
+      <button class="menu-btn" onclick="startGame('riot')">YARD &nbsp; RIOT</button>
+      <button class="menu-btn" onclick="startTournament()">⚔ &nbsp; TOURNAMENT</button>
+      <button class="menu-btn" onclick="toggleCustom()" id="custom-toggle-btn" style="border-color:#5a4a3a;color:#8a7a5a;">CUSTOM &nbsp; FIGHT &nbsp; ▼</button>
+    </div>
+    <div class="menu-section" id="custom-panel" style="display:none;">
+      <div class="menu-section-title">CUSTOM FIGHT SETUP</div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+          <div style="font-size:5px;color:#5a4a3a;letter-spacing:1px;">ARENA</div>
+          <div style="display:flex;gap:4px;" id="arena-select">
+            <button class="cfg-btn selected" data-arena="yard" onclick="selectArena(this)">YARD</button>
+            <button class="cfg-btn" data-arena="cell" onclick="selectArena(this)">CELL</button>
+          </div>
+          <div style="font-size:5px;color:#5a4a3a;letter-spacing:1px;margin-top:6px;">YOUR CREW</div>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <button class="cfg-btn-sm" onclick="adjustCrew(-1)">-</button>
+            <span id="crew-count" style="font-size:7px;color:#c4943a;width:20px;text-align:center;">1</span>
+            <button class="cfg-btn-sm" onclick="adjustCrew(1)">+</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+          <div style="font-size:5px;color:#5a4a3a;letter-spacing:1px;">ENEMY TEAMS</div>
+          <div id="enemy-teams" style="display:flex;flex-direction:column;gap:3px;max-height:80px;overflow-y:auto;"></div>
+          <button class="cfg-btn" onclick="addEnemyTeam()" id="add-team-btn" style="font-size:5px;">+ ADD GANG</button>
+        </div>
+      </div>
+      <div id="custom-summary" style="font-size:5px;color:#6a5a4a;letter-spacing:1px;margin-top:4px;"></div>
+      <button class="menu-btn" onclick="startCustomGame()" style="margin-top:4px;">START &nbsp; CUSTOM &nbsp; FIGHT</button>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">BUILD YOUR FIGHTER</div>
+      <div id="trait-builder" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:280px;">
+        <div class="trait-row" data-trait="aggression">
+          <span class="trait-label">AGG</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+        <div class="trait-row" data-trait="toughness">
+          <span class="trait-label">TGH</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+        <div class="trait-row" data-trait="speed">
+          <span class="trait-label">SPD</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+        <div class="trait-row" data-trait="power">
+          <span class="trait-label">PWR</span>
+          <input type="range" min="1" max="10" value="7" class="trait-slider" oninput="updateTraits()">
+          <span class="trait-val">7</span>
+        </div>
+      </div>
+      <div id="trait-points" style="font-size:6px;color:#8a7a5a;letter-spacing:1px;">POINTS: 28 / 28</div>
+      <div id="trait-archetype" style="font-size:5px;color:#5a4a3a;letter-spacing:1px;">STYLE: BALANCED</div>
+    </div>
+    <div class="controls-info">
+      <span>WASD</span> MOVE &nbsp;&middot;&nbsp; <span>J</span> JAB &nbsp;&middot;&nbsp; <span>K</span> HOOK &nbsp;&middot;&nbsp; <span>H/SPACE</span> SHOVE<br>
+      <span>L</span> BLOCK &nbsp;&middot;&nbsp; <span>S</span> SLIP &nbsp;&middot;&nbsp; <span>ESC</span> PAUSE &nbsp;&middot;&nbsp; <span>R</span> RESTART &nbsp;&middot;&nbsp; <span>Q</span> MENU
+    </div>
+  </div>
+</div>
+
+<div id="hud"></div>
+
+<div id="pause-overlay">
+  <div class="pause-text">PAUSED</div>
+  <button class="menu-btn" onclick="resumeGame()">RESUME &nbsp; <span style="font-size:8px;color:#6a5a4a;">[ESC]</span></button>
+  <button class="menu-btn" onclick="quitToMenu()">QUIT &nbsp; <span style="font-size:8px;color:#6a5a4a;">[ENTER]</span></button>
+</div>
+
+<!-- JS Modules — load order matters (dependency chain) -->
 
 <script>
 // YARD — Constants & Configuration
@@ -448,6 +560,297 @@ const YARD_RIOT_W = 1100;
 const YARD_RIOT_H = 700;
 const YARD_CELL_W = 280;
 const YARD_CELL_H = 200;
+
+</script>
+<script>
+// YARD — Sprite Mode System (16px / 32px toggle)
+// Loaded after constants.js, before utils.js
+
+// ============================================================
+// MODE CONFIGURATION
+// ============================================================
+
+let spriteMode = '16'; // '16' or '32' — toggled from menu
+
+// Active mode accessor — call SM() anywhere to get current config
+function SM() { return SPRITE_MODES[spriteMode]; }
+
+// Tuning accessor — T('CONSTANT_NAME', defaultValue)
+// Returns per-mode override if it exists, otherwise the default (global constant)
+function T(key, fallback) {
+  const tuning = SPRITE_MODES[spriteMode].tuning;
+  return tuning && tuning[key] !== undefined ? tuning[key] : fallback;
+}
+
+const SPRITE_MODES = {
+  // --------------------------------------------------------
+  // 16-BIT MODE (original) — 16x16 sprites at 4x scale = 64px
+  // --------------------------------------------------------
+  '16': {
+    FRAME_W: 16,
+    FRAME_H: 16,
+    SCALE: 4,
+    assetPath: '',
+    assetList: {
+      'i01_walk':    'inmate01_east_walk-Sheet.png',
+      'i01_jab':     'inmate01_east_rightpunch2big-Sheet.png',
+      'i01_hook':    'inmate01_east_lefthook_sheet.png',
+      'i01_block':   'inmate01_east_block-Sheet.png',
+      'i01_hit':     'inmate01_east_gethit1-Sheet-Sheet.png',
+      'i01_bruised': 'inmate01_east_rightpunch2big_bruised1-Sheet.png',
+      'i02_walk':    'inmate02_black1_walkeast-Sheet.png',
+      'i02_jab':     'inmate02black_east_punchright1-Sheet.png',
+      'i02_hit':     'inmate02_east_gethit-Sheet.png',
+      'i03_walk':    'inmate03_east_walk.png',
+      'i03_jab':     'inmate03_punchstab-Sheet.png',
+      'i03_hit':     'inmate03_gethit1-Sheet.png',
+      'i03_block':   'inmate03_east_block-Sheet.png',
+      'i06l_walk':   'inmate06_latino01_east_walk-Sheet.png',
+      'i06l_jab':    'inmate06_latino01_east_punch-Sheet.png',
+      'i06l_hit':    'inmate06_latino01_east_gethit-Sheet.png',
+      'i06b_walk':   'inmate06_black03_east_walk-Sheet.png',
+      'yard':        'yard64.png',
+    },
+    charDefs: {
+      surenos: [
+        { id: 'sureno_a', walk: 'i06l_walk', jab: 'i06l_jab', hook: 'i06l_jab', hit: 'i06l_hit', block: null,
+          shove: null, die: null, celebrate: null, idle: null,
+          walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0,
+          shoveFrames: 0, dieFrames: 0, celebrateFrames: 0, idleFrames: 0 },
+      ],
+      woods: [
+        { id: 'wood_a', walk: 'i01_walk', jab: 'i01_jab', hook: 'i01_hook', hit: 'i01_hit', block: 'i01_block',
+          shove: null, die: null, celebrate: null, idle: null,
+          walkFrames: 4, jabFrames: 5, hookFrames: 5, hitFrames: 4, blockFrames: 5,
+          shoveFrames: 0, dieFrames: 0, celebrateFrames: 0, idleFrames: 0 },
+      ],
+      bgf: [
+        { id: 'bgf_a', walk: 'i02_walk', jab: 'i02_jab', hook: 'i02_jab', hit: 'i02_hit', block: null,
+          shove: null, die: null, celebrate: null, idle: null,
+          walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0,
+          shoveFrames: 0, dieFrames: 0, celebrateFrames: 0, idleFrames: 0 },
+        { id: 'bgf_b', walk: 'i06b_walk', jab: 'i02_jab', hook: 'i02_jab', hit: 'i02_hit', block: null,
+          shove: null, die: null, celebrate: null, idle: null,
+          walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0,
+          shoveFrames: 0, dieFrames: 0, celebrateFrames: 0, idleFrames: 0 },
+      ],
+      nortenos: [
+        { id: 'norte_a', walk: 'i03_walk', jab: 'i03_jab', hook: 'i03_jab', hit: 'i03_hit', block: 'i03_block',
+          shove: null, die: null, celebrate: null, idle: null,
+          walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 5, blockFrames: 6,
+          shoveFrames: 0, dieFrames: 0, celebrateFrames: 0, idleFrames: 0 },
+      ],
+    },
+  },
+
+  // --------------------------------------------------------
+  // 32-BIT MODE — 32x32 sprites at 2x scale = 64px
+  // --------------------------------------------------------
+  '32': {
+    FRAME_W: 32,
+    FRAME_H: 32,
+    SCALE: 2.5, // 32x2.5 = 80px — bigger presence, tighter fights
+    assetPath: 'new_art_32/',
+    assetList: {
+      // --- Surenos A (inmate01_latino01) ---
+      'sur32a_walk':      'inmate01_latino01_walking_east-Sheet.png',
+      'sur32a_jab':       'inmate01_latino01_rightHook-Sheet.png', // fallback: no leftJab export
+      'sur32a_hook':      'inmate01_latino01_rightHook-Sheet.png',
+      'sur32a_hit':       'inmate01_latino01_GetHit-Sheet.png',
+      'sur32a_block':     'inmate01_latino01_Block-Sheet.png',
+      'sur32a_shove':     'inmate01_latino01_Shove-Sheet.png',
+      'sur32a_die':       'inmate01_latino01_Dies-Sheet.png',
+      'sur32a_celebrate': 'inmate01_latino01_celebrate-Sheet.png',
+      // --- Surenos B (inmate01_latino02) ---
+      'sur32b_walk':      'inmate01_latino02_walk-Sheet.png',
+      'sur32b_jab':       'inmate01_latino02_leftJab-Sheet.png',
+      'sur32b_hook':      'inmate01_latino02_rightHook-Sheet.png',
+      'sur32b_hit':       'inmate01_latino02_leftJab-Sheet.png', // TEMP fallback: no getHit PNG
+      'sur32b_block':     'inmate01_latino02_Block-Sheet.png',
+      'sur32b_shove':     'inmate01_latino02_Shove-Sheet.png',
+      'sur32b_die':       'inmate01_latino02_Die-Sheet.png',
+      'sur32b_celebrate': 'inmate01_latino02_Celebrate-Sheet.png',
+      'sur32b_idle':      'inmate01_latino02_idle1_south-Sheet.png',
+      // --- Woods A (inmate02_white01) ---
+      'wod32a_walk':      'inmate02_white01_walk-Sheet.png',
+      'wod32a_jab':       'inmate02_white01_leftJab-Sheet.png',
+      'wod32a_hook':      'inmate02_white01_rightHook-Sheet.png',
+      'wod32a_hit':       'inmate02_white01_getHit-Sheet.png',
+      'wod32a_shove':     'inmate02_white01_shove-Sheet.png',
+      'wod32a_die':       'inmate02_white01_dies-Sheet.png',
+      'wod32a_celebrate': 'inmate02_white01_celebrate-Sheet.png',
+      'wod32a_idle':      'inmate02_white01_idle1_south-Sheet.png',
+      // --- Woods B (inmate02_white02) ---
+      'wod32b_walk':      'inmate02_white02_walk-Sheet.png',
+      'wod32b_jab':       'inmate02_white02_leftJab-Sheet.png',
+      'wod32b_hook':      'inmate02_white02_rightHook-Sheet.png',
+      'wod32b_hit':       'inmate02_white02_GetHit-Sheet.png',
+      'wod32b_block':     'inmate02_white02_Block-Sheet.png',
+      'wod32b_die':       'inmate02_white02_Die-Sheet.png',
+      'wod32b_celebrate': 'inmate02_white02_celebrate-Sheet.png',
+      'wod32b_idle':      'inmate02_white02_idle1_south-Sheet.png',
+      // --- BGF/Riders A (inmate03_black01) ---
+      'bgf32a_walk':      'inmate03_black01_walk-Sheet.png',
+      'bgf32a_jab':       'inmate03_black01_leftJab-Sheet.png',
+      'bgf32a_hook':      'inmate03_black01_rightJab-Sheet.png',
+      'bgf32a_hit':       'inmate03_black01_getHit-Sheet.png',
+      'bgf32a_block':     'inmate03_black01_block-Sheet.png',
+      'bgf32a_die':       'inmate03_black01_Dies-Sheet.png',
+      'bgf32a_celebrate': 'inmate03_black01_celebrate-Sheet-Sheet.png',
+      'bgf32a_idle':      'inmate03_black01_idle1_south-Sheet.png',
+      // --- BGF/Riders B (inmate03_black02) ---
+      'bgf32b_walk':      'inmate03_black02_walk-Sheet.png',
+      'bgf32b_jab':       'inmate03_black02_leftJab-Sheet.png',
+      'bgf32b_hook':      'inmate03_black02_rightHook-Sheet.png',
+      'bgf32b_hit':       'inmate03_black02_getHit-Sheet.png',
+      'bgf32b_block':     'inmate03_black02_Block-Sheet.png',
+      'bgf32b_shove':     'inmate03_black02_Shove-Sheet.png',
+      'bgf32b_die':       'inmate03_black02_Dies-Sheet.png',
+      'bgf32b_celebrate': 'inmate03_black02_Celebrate-Sheet.png',
+      'bgf32b_idle':      'inmate03_black02_idle1_south-Sheet.png',
+      // --- Nortenos (inmate04_latino02 — single model for all) ---
+      'nor32_walk':       'inmate04_latino02_walk-Sheet.png',
+      'nor32_jab':        'inmate04_latino02_leftJab-Sheet.png',
+      'nor32_hook':       'inmate04_latino02_rightJab-Sheet.png',
+      'nor32_hit':        'inmate04_latino02_getHit-Sheet.png',
+      'nor32_shove':      'inmate04_latino02_Shove-Sheet.png',
+      'nor32_die':        'inmate04_latino02_Dies-Sheet.png',
+      // Nortenos extras from inmate04_latino01 partial set
+      'nor32_block':      'inmate04_latino01_Block-Sheet.png',
+      'nor32_idle':       'inmate04_latino01_idle1_southNorteno-Sheet.png',
+      'nor32_celebrate':  'inmate04_latino01_Celebrate_Norteno-Sheet.png',
+      // Environment
+      'yard':             '../yard64.png',
+    },
+    charDefs: {
+      surenos: [
+        { id: 'sureno32_a',
+          walk: 'sur32a_walk', jab: 'sur32a_jab', hook: 'sur32a_hook',
+          hit: 'sur32a_hit', block: 'sur32a_block', shove: 'sur32a_shove',
+          die: 'sur32a_die', celebrate: 'sur32a_celebrate', idle: null,
+          walkFrames: 5, jabFrames: 9, hookFrames: 9, hitFrames: 5, blockFrames: 6,
+          shoveFrames: 7, dieFrames: 10, celebrateFrames: 17, idleFrames: 0,
+          // Per-character anim speed overrides (ms per frame)
+          animSpeeds: { jab: 18, hook: 50, hit: 70, die: 80, celebrate: 100, shove: 50 }
+        },
+        { id: 'sureno32_b',
+          walk: 'sur32b_walk', jab: 'sur32b_jab', hook: 'sur32b_hook',
+          hit: 'sur32b_hit', block: 'sur32b_block', shove: 'sur32b_shove',
+          die: 'sur32b_die', celebrate: 'sur32b_celebrate', idle: 'sur32b_idle',
+          walkFrames: 6, jabFrames: 6, hookFrames: 6, hitFrames: 6, blockFrames: 5,
+          shoveFrames: 9, dieFrames: 15, celebrateFrames: 17, idleFrames: 17,
+          animSpeeds: { jab: 28, hook: 55, hit: 60, die: 65, celebrate: 100, shove: 45, idle: 180 }
+        },
+      ],
+      woods: [
+        { id: 'wood32_a',
+          walk: 'wod32a_walk', jab: 'wod32a_jab', hook: 'wod32a_hook',
+          hit: 'wod32a_hit', block: null, shove: 'wod32a_shove',
+          die: 'wod32a_die', celebrate: 'wod32a_celebrate', idle: 'wod32a_idle',
+          walkFrames: 5, jabFrames: 5, hookFrames: 6, hitFrames: 7, blockFrames: 0,
+          shoveFrames: 8, dieFrames: 11, celebrateFrames: 17, idleFrames: 17,
+          animSpeeds: { jab: 33, hook: 55, hit: 55, die: 75, celebrate: 100, shove: 50, idle: 180 }
+        },
+        { id: 'wood32_b',
+          walk: 'wod32b_walk', jab: 'wod32b_jab', hook: 'wod32b_hook',
+          hit: 'wod32b_hit', block: 'wod32b_block', shove: null,
+          die: 'wod32b_die', celebrate: 'wod32b_celebrate', idle: 'wod32b_idle',
+          walkFrames: 6, jabFrames: 5, hookFrames: 7, hitFrames: 7, blockFrames: 5,
+          shoveFrames: 0, dieFrames: 14, celebrateFrames: 10, idleFrames: 17,
+          animSpeeds: { jab: 33, hook: 48, hit: 55, die: 65, celebrate: 110, shove: 50, idle: 180 }
+        },
+      ],
+      bgf: [
+        { id: 'bgf32_a',
+          walk: 'bgf32a_walk', jab: 'bgf32a_jab', hook: 'bgf32a_hook',
+          hit: 'bgf32a_hit', block: 'bgf32a_block', shove: null,
+          die: 'bgf32a_die', celebrate: 'bgf32a_celebrate', idle: 'bgf32a_idle',
+          walkFrames: 4, jabFrames: 6, hookFrames: 6, hitFrames: 14, blockFrames: 7,
+          shoveFrames: 0, dieFrames: 14, celebrateFrames: 17, idleFrames: 17,
+          animSpeeds: { jab: 28, hook: 55, hit: 28, die: 65, celebrate: 100, idle: 180 }
+        },
+        { id: 'bgf32_b',
+          walk: 'bgf32b_walk', jab: 'bgf32b_jab', hook: 'bgf32b_hook',
+          hit: 'bgf32b_hit', block: 'bgf32b_block', shove: 'bgf32b_shove',
+          die: 'bgf32b_die', celebrate: 'bgf32b_celebrate', idle: 'bgf32b_idle',
+          walkFrames: 6, jabFrames: 7, hookFrames: 8, hitFrames: 16, blockFrames: 7,
+          shoveFrames: 9, dieFrames: 18, celebrateFrames: 12, idleFrames: 17,
+          animSpeeds: { jab: 24, hook: 42, hit: 24, die: 52, celebrate: 100, shove: 45, idle: 180 }
+        },
+      ],
+      nortenos: [
+        { id: 'norte32_a',
+          walk: 'nor32_walk', jab: 'nor32_jab', hook: 'nor32_hook',
+          hit: 'nor32_hit', block: 'nor32_block', shove: 'nor32_shove',
+          die: 'nor32_die', celebrate: 'nor32_celebrate', idle: 'nor32_idle',
+          walkFrames: 8, jabFrames: 7, hookFrames: 9, hitFrames: 10, blockFrames: 4,
+          shoveFrames: 13, dieFrames: 15, celebrateFrames: 16, idleFrames: 17,
+          animSpeeds: { jab: 24, hook: 37, hit: 40, die: 62, celebrate: 100, shove: 32, idle: 180 }
+        },
+      ],
+    },
+    // --------------------------------------------------------
+    // 32-BIT TUNING — grittier, weightier, more deliberate
+    // These override global constants via T('KEY', default)
+    // --------------------------------------------------------
+    tuning: {
+      // Movement — slower, more grounded
+      BASE_MOVE_SPEED_MIN: 0.9,      // was 1.2 — visible legs need time to cycle
+      BASE_MOVE_SPEED_RANGE: 0.6,    // was 0.8 — narrower speed spread
+      ANIM_WALK_SPD: 165,            // was 140ms — footstep cadence matches speed
+
+      // Attack lunges — step into the punch, don't teleport
+      LUNGE_FORCE_JAB: 2.2,          // was 3.5
+      LUNGE_FORCE_HOOK: 3.2,         // was 5.0
+      WHIFF_BACKSTEP: 1.4,           // was 2 — less dramatic miss drift
+
+      // Recovery — deliberate rhythm, punches are commitments
+      JAB_RECOVERY_MS: 130,          // was 100ms
+      HOOK_RECOVERY_MS: 320,         // was 250ms
+
+      // Hitstop — feel every connection
+      JAB_HITSTOP: 90,               // was 70ms — see the fist land
+      HOOK_HITSTOP: 260,             // was 200ms — brutal freeze
+      KO_HITSTOP: 550,               // was 450ms — cinematic
+
+      // Knockback — heavy impacts but bodies stay grounded
+      JAB_KNOCKBACK: 3.5,            // was 5
+      HOOK_KNOCKBACK: 7,             // was 10
+      KB_FRICTION_START: 0.975,      // was 0.985 — more grounded from hit
+      HOOK_VERTICAL_BOUNCE: -2.5,    // was -3.5 — less cartoony pop
+      KNOCKBACK_DURATION_JAB: 150,   // was 180ms
+      KNOCKBACK_DURATION_HOOK: 260,  // was 320ms
+
+      // Camera — smoother, less frantic
+      CAMERA_FOLLOW_SPEED: 0.055,    // was 0.08
+
+      // AI pacing — more deliberate
+      AI_COMBO_DELAY_BASE: 100,      // was ~80ms — breathes between punches
+      AI_COMBO_DELAY_RANGE: 80,      // randomized range on top
+      AI_APPROACH_SPEED_MULT: 0.85,  // closes distance 15% slower
+      AI_SIZING_UP_ADD: 300,         // extra ms spent sizing up before engaging
+      AI_PROBE_CHANCE_MULT: 0.75,    // less random probing, more deliberate
+
+      // Fighter degradation — beaten fighters visibly deteriorate
+      DEGRADATION_ENABLED: true,
+      DEGRADATION_SPEED_LOSS: 0.25,    // max 25% speed loss at near-death
+      DEGRADATION_INJURY_DRAG: 0.15,   // injury-based speed penalty
+      DEGRADATION_KD_PENALTY: 0.06,    // 6% slower per knockdown taken
+      DEGRADATION_ATTACK_SLOW: 0.2,    // attacks up to 20% slower when hurt
+
+      // Knockdown variation — not a metronome
+      KNOCKDOWN_VARIATION: true,
+      KNOCKDOWN_DURATION_BASE: 1800,    // base slightly longer than 16-bit (1500)
+      KD_PER_KNOCKDOWN_ADD: 400,        // each prior KD adds 400ms on the ground
+      KD_LOW_HEALTH_ADD: 600,           // up to 600ms more when near-death
+      KD_INJURY_ADD: 300,               // injuries add up to 300ms
+      KD_TOUGHNESS_REDUCE: 400,         // tough fighters recover faster
+      KD_RANDOM_RANGE: 350,             // +/- 350ms random variance
+      KD_MIN_DURATION: 800,             // minimum time on ground
+      KD_MAX_DURATION: 4500,            // a devastated fighter stays down a long time
+    },
+  },
+};
 
 </script>
 <script>
@@ -999,76 +1402,33 @@ function randItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function angle(a, b) { return Math.atan2(b.y - a.y, b.x - a.x); }
 
 // ============================================================
-// ASSET LOADER
+// ASSET LOADER (mode-aware — reads from spritemode.js SM())
 // ============================================================
 const assets = {};
-const ASSET_LIST = {
-  // Inmate01 (White/Woods)
-  'i01_walk':    'inmate01_east_walk-Sheet.png',
-  'i01_jab':     'inmate01_east_rightpunch2big-Sheet.png',
-  'i01_hook':    'inmate01_east_lefthook_sheet.png',
-  'i01_block':   'inmate01_east_block-Sheet.png',
-  'i01_hit':     'inmate01_east_gethit1-Sheet-Sheet.png',
-  'i01_bruised': 'inmate01_east_rightpunch2big_bruised1-Sheet.png',
-  // Inmate02 (Black/BGF)
-  'i02_walk':    'inmate02_black1_walkeast-Sheet.png',
-  'i02_jab':     'inmate02black_east_punchright1-Sheet.png',
-  'i02_hit':     'inmate02_east_gethit-Sheet.png',
-  // Inmate03 (Nortenos)
-  'i03_walk':    'inmate03_east_walk.png',
-  'i03_jab':     'inmate03_punchstab-Sheet.png',
-  'i03_hit':     'inmate03_gethit1-Sheet.png',
-  'i03_block':   'inmate03_east_block-Sheet.png',
-  // Inmate06 Latino (Surenos)
-  'i06l_walk':   'inmate06_latino01_east_walk-Sheet.png',
-  'i06l_jab':    'inmate06_latino01_east_punch-Sheet.png',
-  'i06l_hit':    'inmate06_latino01_east_gethit-Sheet.png',
-  // Inmate06 Black variant
-  'i06b_walk':   'inmate06_black03_east_walk-Sheet.png',
-  // Environment
-  'yard':        'yard64.png',
-};
 
 function loadAssets() {
+  // Clear existing assets
+  for (const key of Object.keys(assets)) delete assets[key];
+
+  const mode = SM();
   const promises = [];
-  for (const [key, path] of Object.entries(ASSET_LIST)) {
-    promises.push(new Promise((resolve, reject) => {
+  for (const [key, filename] of Object.entries(mode.assetList)) {
+    promises.push(new Promise((resolve) => {
       const img = new Image();
       img.onload = () => { assets[key] = img; resolve(); };
-      img.onerror = () => { console.warn('Failed to load:', path); assets[key] = null; resolve(); };
-      img.src = path;
+      img.onerror = () => { console.warn('Failed to load:', mode.assetPath + filename); assets[key] = null; resolve(); };
+      img.src = mode.assetPath + filename;
     }));
   }
   return Promise.all(promises);
 }
 
 // ============================================================
-// CHARACTER DEFINITIONS
+// CHARACTER DEFINITIONS (mode-aware — reads from spritemode.js)
 // ============================================================
-// Maps gang to sprite sets. Each sprite set defines which asset keys to use.
-const CHAR_DEFS = {
-  surenos: [
-    { id: 'sureno_a', walk: 'i06l_walk', jab: 'i06l_jab', hook: 'i06l_jab', hit: 'i06l_hit', block: null,
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0 },
-  ],
-  woods: [
-    { id: 'wood_a', walk: 'i01_walk', jab: 'i01_jab', hook: 'i01_hook', hit: 'i01_hit', block: 'i01_block',
-      walkFrames: 4, jabFrames: 5, hookFrames: 5, hitFrames: 4, blockFrames: 5 },
-  ],
-  bgf: [
-    { id: 'bgf_a', walk: 'i02_walk', jab: 'i02_jab', hook: 'i02_jab', hit: 'i02_hit', block: null,
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0 },
-    { id: 'bgf_b', walk: 'i06b_walk', jab: 'i02_jab', hook: 'i02_jab', hit: 'i02_hit', block: null,
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 4, blockFrames: 0 },
-  ],
-  nortenos: [
-    { id: 'norte_a', walk: 'i03_walk', jab: 'i03_jab', hook: 'i03_jab', hit: 'i03_hit', block: 'i03_block',
-      walkFrames: 4, jabFrames: 4, hookFrames: 4, hitFrames: 5, blockFrames: 6 },
-  ],
-};
-
 function getCharDef(gang) {
-  const defs = CHAR_DEFS[gang];
+  const defs = SM().charDefs[gang];
+  if (!defs || defs.length === 0) return null;
   return defs[Math.floor(Math.random() * defs.length)];
 }
 
@@ -1302,7 +1662,7 @@ class Camera {
   setTarget(x, y) { this.targetX = x; this.targetY = y; }
   update(dt) {
     // Smooth follow
-    const followSpeed = this.followFast ? 0.2 : 0.08;
+    const followSpeed = this.followFast ? 0.2 : T('CAMERA_FOLLOW_SPEED', 0.08);
     this.x = lerp(this.x, this.targetX - CANVAS_W / (2 * this.zoom), followSpeed);
     this.y = lerp(this.y, this.targetY - CANVAS_H / (2 * this.zoom), followSpeed);
     // Clamp to world - center if view exceeds world
@@ -1906,7 +2266,8 @@ const STATES = {
   SHOVE: 'shove',
   CLINCH: 'clinch',
   SLIP: 'slip',
-  KO: 'ko'
+  KO: 'ko',
+  CELEBRATE: 'celebrate'
 };
 
 class Fighter {
@@ -1972,7 +2333,7 @@ class Fighter {
     // Derived stats
     this.maxHealth = MAX_HEALTH * (0.8 + this.traits.toughness * 0.4);
     this.health = this.maxHealth;
-    this.baseMoveSpeed = 1.2 + this.traits.speed * 0.8;
+    this.baseMoveSpeed = T('BASE_MOVE_SPEED_MIN', 1.2) + this.traits.speed * T('BASE_MOVE_SPEED_RANGE', 0.8);
     this.damageMult = 0.7 + this.traits.power * 0.6;
 
     // Phase 2: Stamina
@@ -2076,18 +2437,54 @@ class Fighter {
     if (this.heat > 0) spd *= (1 + (this.heat / HEAT_MAX) * HEAT_SPEED_BONUS);
     // Wobble slows you down
     if (this.wobbleTimer > 0) spd *= WOBBLE_SPEED_MULT;
+    // Degradation — beaten fighters slow down (32-bit tunable)
+    if (T('DEGRADATION_ENABLED', false)) {
+      const healthPct = this.health / this.maxHealth;
+      const injuryPct = Math.min(1, this.injuries / 100);
+      // Health loss: gradual slowdown, up to 25% slower at near-death
+      if (healthPct < 0.7) {
+        const healthDrag = (1 - healthPct) * T('DEGRADATION_SPEED_LOSS', 0.25);
+        spd *= (1 - healthDrag);
+      }
+      // Injuries compound: accumulated damage makes you sluggish
+      if (injuryPct > 0.3) {
+        spd *= (1 - (injuryPct - 0.3) * T('DEGRADATION_INJURY_DRAG', 0.15));
+      }
+      // Each knockdown takes a permanent toll
+      if (this.knockdownCount > 0) {
+        spd *= (1 - this.knockdownCount * T('DEGRADATION_KD_PENALTY', 0.06));
+      }
+    }
     return spd;
+  }
+
+  // Degradation factor for animation speed — beaten fighters punch slower
+  get degradationMult() {
+    if (!T('DEGRADATION_ENABLED', false)) return 1;
+    const healthPct = this.health / this.maxHealth;
+    const injuryPct = Math.min(1, this.injuries / 100);
+    let mult = 1;
+    // Below 50% health: attacks get sluggish (up to 20% slower)
+    if (healthPct < 0.5) {
+      mult += (1 - healthPct * 2) * T('DEGRADATION_ATTACK_SLOW', 0.2);
+    }
+    // Injuries: accumulated damage slows wind-up
+    if (injuryPct > 0.4) {
+      mult += (injuryPct - 0.4) * 0.15;
+    }
+    return mult; // >1 means slower (multiplied into anim timer)
   }
   get isActing() {
     return this.state === STATES.JAB || this.state === STATES.HOOK || this.state === STATES.SHOVE ||
            this.state === STATES.HIT || this.state === STATES.KNOCKDOWN ||
            this.state === STATES.GETUP || this.state === STATES.CLINCH || this.state === STATES.KO ||
-           this.state === STATES.SLIP || this.isStaggered;
+           this.state === STATES.SLIP || this.state === STATES.CELEBRATE || this.isStaggered;
   }
   get canMove() {
     if (this.state === STATES.HIT || this.state === STATES.KNOCKDOWN ||
         this.state === STATES.GETUP || this.state === STATES.KO ||
-        this.state === STATES.CLINCH || this.state === STATES.SLIP) return false;
+        this.state === STATES.CLINCH || this.state === STATES.SLIP ||
+        this.state === STATES.CELEBRATE) return false;
     if (this.isStaggered) return false;
     return true;
   }
@@ -2130,6 +2527,10 @@ class Fighter {
       this.inputBuffer = null;
       this.inputBufferTimer = 0;
     }
+    // Random idle phase offset — prevent fighters from syncing up
+    if (newState === STATES.IDLE) {
+      this.animTimer = Math.random() * 800;
+    }
   }
 
   // Batch 5: Smart lunge — scales by distance, no lunge if already close
@@ -2157,7 +2558,7 @@ class Fighter {
     this.setState(STATES.JAB);
     this.lastAttackMoveMult = MOVE_DEFS.jab.moveSpeedMult;
     this.lastAttackHit = false;
-    this._applyLunge(LUNGE_FORCE_JAB);
+    this._applyLunge(T('LUNGE_FORCE_JAB', LUNGE_FORCE_JAB));
   }
 
   hook() {
@@ -2170,7 +2571,7 @@ class Fighter {
     this.setState(STATES.HOOK);
     this.lastAttackMoveMult = MOVE_DEFS.hook.moveSpeedMult;
     this.lastAttackHit = false;
-    this._applyLunge(LUNGE_FORCE_HOOK);
+    this._applyLunge(T('LUNGE_FORCE_HOOK', LUNGE_FORCE_HOOK));
   }
 
   block() {
@@ -2289,7 +2690,30 @@ class Fighter {
     this.isDown = true;
     this.getupTaps = 0;
     this.setState(STATES.KNOCKDOWN);
-    this.knockdownTimer = KNOCKDOWN_DURATION;
+
+    // Variable knockdown duration — condition-based, not a metronome
+    const baseKD = T('KNOCKDOWN_DURATION_BASE', KNOCKDOWN_DURATION);
+    let kdDuration = baseKD;
+    if (T('KNOCKDOWN_VARIATION', false)) {
+      const healthPct = this.health / this.maxHealth;
+      const injuryPct = Math.min(1, this.injuries / 100);
+      // Each prior knockdown adds time on the ground
+      kdDuration += this.knockdownCount * T('KD_PER_KNOCKDOWN_ADD', 400);
+      // Low health = longer recovery
+      if (healthPct < 0.5) {
+        kdDuration += (1 - healthPct * 2) * T('KD_LOW_HEALTH_ADD', 600);
+      }
+      // Injuries compound
+      kdDuration += injuryPct * T('KD_INJURY_ADD', 300);
+      // Toughness helps you bounce back
+      kdDuration -= this.traits.toughness * T('KD_TOUGHNESS_REDUCE', 400);
+      // Random variance — sometimes you surprise everyone
+      kdDuration += randRange(-T('KD_RANDOM_RANGE', 300), T('KD_RANDOM_RANGE', 300));
+      // Clamp to reasonable bounds
+      kdDuration = clamp(kdDuration, T('KD_MIN_DURATION', 800), T('KD_MAX_DURATION', 4000));
+    }
+    this.knockdownTimer = kdDuration;
+    this.currentKDDuration = kdDuration; // store for time-on-ground calculation
     this.vx = 0; this.vy = 0;
 
     // Variable AI get-up delay based on condition
@@ -2303,14 +2727,14 @@ class Fighter {
 
       if (willToGetUp < 0.15) {
         // Too broken — AI stays down, will time out to KO
-        this.aiGetupDelay = KNOCKDOWN_DURATION + 999; // won't try
+        this.aiGetupDelay = kdDuration + 999; // won't try
       } else {
         // Variable timing: tough fighters get up faster, hurt fighters struggle
-        const fastest = KNOCKDOWN_DURATION * 0.25;
-        const slowest = KNOCKDOWN_DURATION * 0.8;
+        const fastest = kdDuration * 0.25;
+        const slowest = kdDuration * 0.8;
         this.aiGetupDelay = lerp(slowest, fastest, willToGetUp);
         // Add randomness so it doesn't feel robotic
-        this.aiGetupDelay += randRange(-200, 300);
+        this.aiGetupDelay += randRange(-200, 400);
       }
     }
 
@@ -2618,7 +3042,7 @@ class Fighter {
       this.knockdownTimer -= dt;
       // AI variable get-up — timing depends on condition/willpower
       if (!this.isPlayer) {
-        const timeOnGround = KNOCKDOWN_DURATION - this.knockdownTimer;
+        const timeOnGround = (this.currentKDDuration || KNOCKDOWN_DURATION) - this.knockdownTimer;
         if (timeOnGround >= this.aiGetupDelay) {
           // AI tries to get up — simulate effort (not instant)
           this.attemptGetUp();
@@ -2740,7 +3164,7 @@ class Fighter {
       } else {
         // Interpolate friction: starts loose (body flies), ends heavy (brakes)
         const t = this.knockbackTimer / this.knockbackDuration;
-        friction = lerp(KB_FRICTION_START, KB_FRICTION_END, t * t); // quadratic ramp to heavy braking
+        friction = lerp(T('KB_FRICTION_START', KB_FRICTION_START), KB_FRICTION_END, t * t); // quadratic ramp to heavy braking
       }
     } else {
       friction = 0.85;
@@ -2751,8 +3175,20 @@ class Fighter {
     let moveMult = 1;
     if (this.isStaggered) moveMult *= STAGGER_SPEED_MULT;
     if (this.wobbleTimer > 0) moveMult *= WOBBLE_SPEED_MULT;
-    this.x += this.vx * moveMult * dt / 16;
-    this.y += this.vy * moveMult * dt / 16;
+    // Degradation stumble — hurt fighters randomly hitch while walking
+    let stumbleMult = 1;
+    if (T('DEGRADATION_ENABLED', false) && this.state === STATES.WALK && this.alive) {
+      const healthPct = this.health / this.maxHealth;
+      const injuryPct = Math.min(1, this.injuries / 100);
+      const stumbleChance = (healthPct < 0.4 ? (1 - healthPct) * 0.008 : 0) +
+                            (injuryPct > 0.5 ? (injuryPct - 0.5) * 0.006 : 0) +
+                            this.knockdownCount * 0.003;
+      if (Math.random() < stumbleChance) {
+        stumbleMult = randRange(0.1, 0.4); // momentary hitch
+      }
+    }
+    this.x += this.vx * moveMult * stumbleMult * dt / 16;
+    this.y += this.vy * moveMult * stumbleMult * dt / 16;
     this.vx *= friction;
     this.vy *= friction;
     if (Math.abs(this.vx) < 0.01) this.vx = 0;
@@ -2784,39 +3220,61 @@ class Fighter {
     }
 
     // State-specific animation updates
+    // Per-character anim speed: use charDef.animSpeeds if available, else global constant
+    const _as = this.charDef.animSpeeds || {};
     switch (this.state) {
-      case STATES.IDLE:
-        this._updateAnim(dt, ANIM_IDLE_SPD, 2, true);
+      case STATES.IDLE: {
+        const idleFC = (this.charDef.idle && this.charDef.idleFrames > 0) ? this.charDef.idleFrames : 2;
+        const idleSpd = _as.idle || ANIM_IDLE_SPD;
+        this._updateAnim(dt, idleSpd, idleFC, true);
         break;
+      }
       case STATES.WALK:
-        this._updateAnim(dt, ANIM_WALK_SPD, this.charDef.walkFrames, true);
+        this._updateAnim(dt, _as.walk || T('ANIM_WALK_SPD', ANIM_WALK_SPD), this.charDef.walkFrames, true);
         break;
       case STATES.JAB:
-        this._updateAttackAnim(dt, ANIM_JAB_SPD, this.charDef.jabFrames, 'jab');
+        this._updateAttackAnim(dt, _as.jab || ANIM_JAB_SPD, this.charDef.jabFrames, 'jab');
         break;
       case STATES.HOOK:
-        this._updateAttackAnim(dt, ANIM_HOOK_SPD, this.charDef.hookFrames, 'hook');
+        this._updateAttackAnim(dt, _as.hook || ANIM_HOOK_SPD, this.charDef.hookFrames, 'hook');
         break;
-      case STATES.SHOVE:
-        this._updateAttackAnim(dt, ANIM_JAB_SPD, this.charDef.jabFrames, 'shove');
+      case STATES.SHOVE: {
+        const shvFC = this.charDef.shoveFrames || this.charDef.jabFrames;
+        this._updateAttackAnim(dt, _as.shove || ANIM_JAB_SPD, shvFC, 'shove');
         break;
+      }
       case STATES.BLOCK:
         this.animFrame = Math.min(2, this.charDef.blockFrames > 0 ? 2 : 0);
         break;
-      case STATES.HIT:
-        this._updateAnim(dt, ANIM_HIT_SPD, this.charDef.hitFrames, false);
-        if (this.animFrame >= this.charDef.hitFrames - 1 && this.stateTimer > ANIM_HIT_SPD * this.charDef.hitFrames) {
+      case STATES.HIT: {
+        const hitSpd = _as.hit || ANIM_HIT_SPD;
+        this._updateAnim(dt, hitSpd, this.charDef.hitFrames, false);
+        if (this.animFrame >= this.charDef.hitFrames - 1 && this.stateTimer > hitSpd * this.charDef.hitFrames) {
           this.setState(STATES.IDLE);
         }
         break;
-      case STATES.KNOCKDOWN:
-        this._updateAnim(dt, 100, this.charDef.hitFrames, false);
+      }
+      case STATES.KNOCKDOWN: {
+        const dieFC = (this.charDef.die && this.charDef.dieFrames > 0) ? this.charDef.dieFrames : this.charDef.hitFrames;
+        this._updateAnim(dt, _as.die || 100, dieFC, false);
         if (this.stateTimer > 800) this.setState(STATES.IDLE);
         break;
-      case STATES.KO:
-        this.animFrame = Math.max(0, this.charDef.hitFrames - 1);
+      }
+      case STATES.KO: {
+        // Play die animation if available, otherwise freeze on last hit frame
+        if (this.charDef.die && this.charDef.dieFrames > 0) {
+          this._updateAnim(dt, _as.die || 80, this.charDef.dieFrames, false);
+        } else {
+          this.animFrame = Math.max(0, this.charDef.hitFrames - 1);
+        }
         this.koTimer -= dt;
         break;
+      }
+      case STATES.CELEBRATE: {
+        const celFC = (this.charDef.celebrate && this.charDef.celebrateFrames > 0) ? this.charDef.celebrateFrames : this.charDef.walkFrames;
+        this._updateAnim(dt, _as.celebrate || 100, celFC, true);
+        break;
+      }
       case STATES.SLIP:
         // Use walk frame 0 (ducking pose) — visually the sprite squishes down
         this.animFrame = 0;
@@ -2838,23 +3296,27 @@ class Fighter {
   }
 
   _updateAttackAnim(dt, speed, frameCount, attackType) {
+    // Degradation: beaten fighters swing slower
+    const effectiveSpeed = speed * this.degradationMult;
     this.animTimer += dt;
-    if (this.animTimer >= speed) {
+    if (this.animTimer >= effectiveSpeed) {
       this.animTimer -= speed;
       this.animFrame++;
 
       if (this.animFrame >= frameCount) {
         // Phase 1C: Set recovery cooldown based on attack type
-        this.recoveryCooldown = MOVE_DEFS[attackType] ? MOVE_DEFS[attackType].recovery :
-          (attackType === 'hook' ? HOOK_RECOVERY_MS : JAB_RECOVERY_MS);
+        this.recoveryCooldown = attackType === 'hook' ? T('HOOK_RECOVERY_MS', HOOK_RECOVERY_MS) :
+          attackType === 'shove' ? (MOVE_DEFS.shove ? MOVE_DEFS.shove.recovery : 200) :
+          T('JAB_RECOVERY_MS', JAB_RECOVERY_MS);
         // Batch 4: Whiff backstep — drift backward on miss
         if (!this.lastAttackHit && attackType !== 'shove') {
           SFX.whiff();
           const backstepDir = this.target ?
             Math.atan2(this.y - this.target.y, this.x - this.target.x) :
             (this.facing === 1 ? Math.PI : 0);
-          this.vx += Math.cos(backstepDir) * WHIFF_BACKSTEP;
-          this.vy += Math.sin(backstepDir) * WHIFF_BACKSTEP;
+          const whiffForce = T('WHIFF_BACKSTEP', WHIFF_BACKSTEP);
+          this.vx += Math.cos(backstepDir) * whiffForce;
+          this.vy += Math.sin(backstepDir) * whiffForce;
         }
         this._isCounterAttack = false;
         this.setState(STATES.IDLE);
@@ -2877,14 +3339,18 @@ class Fighter {
     }
     const drawY = this.y + this.bounceY + breathOffset; // Phase 1B: vertical bounce offset + breathing
 
+    // Cache sprite mode values for this draw call
+    const fw = SM().FRAME_W, fh = SM().FRAME_H, sc = SM().SCALE;
+    const displayH = fh * sc; // on-screen sprite height (~64px)
+
     // Shadow — dark ellipse under feet
     if (this.alive || this.state === STATES.KO) {
       const shadowAlpha = this.state === STATES.KO ? 0.12 : 0.2;
-      const shadowScale = this.state === STATES.KNOCKDOWN ? 1.3 : 1;
+      const shadowSc = this.state === STATES.KNOCKDOWN ? 1.3 : 1;
       ctx.globalAlpha = shadowAlpha;
       ctx.fillStyle = '#000000';
       ctx.beginPath();
-      ctx.ellipse(Math.floor(this.x), Math.floor(this.y + FRAME_H * SCALE / 2 - 2), 16 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
+      ctx.ellipse(Math.floor(this.x), Math.floor(this.y + displayH / 2 - 2), 16 * shadowSc, 6 * shadowSc, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
@@ -2893,8 +3359,14 @@ class Fighter {
     let sheetKey, frameCount;
     switch (this.state) {
       case STATES.IDLE:
-        sheetKey = this.charDef.walk;
-        frameCount = this.charDef.walkFrames;
+        // Use dedicated idle sheet if available, otherwise walk
+        if (this.charDef.idle && this.charDef.idleFrames > 0) {
+          sheetKey = this.charDef.idle;
+          frameCount = this.charDef.idleFrames;
+        } else {
+          sheetKey = this.charDef.walk;
+          frameCount = this.charDef.walkFrames;
+        }
         break;
       case STATES.WALK:
         sheetKey = this.charDef.walk;
@@ -2909,18 +3381,37 @@ class Fighter {
         frameCount = this.charDef.hookFrames;
         break;
       case STATES.SHOVE:
-        sheetKey = this.charDef.jab;
-        frameCount = this.charDef.jabFrames;
+        // Use dedicated shove sheet if available, otherwise fall back to jab
+        sheetKey = this.charDef.shove || this.charDef.jab;
+        frameCount = this.charDef.shoveFrames || this.charDef.jabFrames;
         break;
       case STATES.BLOCK:
         sheetKey = this.charDef.block || this.charDef.walk;
         frameCount = this.charDef.blockFrames || this.charDef.walkFrames;
         break;
       case STATES.HIT:
-      case STATES.KNOCKDOWN:
-      case STATES.KO:
         sheetKey = this.charDef.hit;
         frameCount = this.charDef.hitFrames;
+        break;
+      case STATES.KNOCKDOWN:
+      case STATES.KO:
+        // Use dedicated die sheet if available, otherwise hit
+        if (this.charDef.die && this.charDef.dieFrames > 0) {
+          sheetKey = this.charDef.die;
+          frameCount = this.charDef.dieFrames;
+        } else {
+          sheetKey = this.charDef.hit;
+          frameCount = this.charDef.hitFrames;
+        }
+        break;
+      case STATES.CELEBRATE:
+        if (this.charDef.celebrate && this.charDef.celebrateFrames > 0) {
+          sheetKey = this.charDef.celebrate;
+          frameCount = this.charDef.celebrateFrames;
+        } else {
+          sheetKey = this.charDef.walk;
+          frameCount = this.charDef.walkFrames;
+        }
         break;
       case STATES.SLIP:
         sheetKey = this.charDef.walk;
@@ -2935,10 +3426,10 @@ class Fighter {
     if (!sheet) return;
 
     const frame = clamp(this.animFrame, 0, frameCount - 1);
-    const srcX = frame * FRAME_W;
+    const srcX = frame * fw;
     const srcY = 0;
-    const srcW = FRAME_W;
-    const srcH = Math.min(FRAME_H, sheet.height);
+    const srcW = fw;
+    const srcH = Math.min(fh, sheet.height);
 
     ctx.save();
     ctx.translate(Math.floor(drawX), Math.floor(drawY));
@@ -2957,7 +3448,7 @@ class Fighter {
     if (this.state === STATES.KNOCKDOWN) {
       ctx.globalAlpha = 0.8;
       ctx.scale(1, 0.35); // flatten vertically
-      ctx.translate(0, FRAME_H * SCALE * 0.8); // shift down
+      ctx.translate(0, displayH * 0.8); // shift down
     }
 
     // Batch 1: Get-up animation — stretching back up
@@ -2965,7 +3456,7 @@ class Fighter {
       const t = Math.min(1, this.stateTimer / 400);
       const yScale = 0.35 + t * 0.65;
       ctx.scale(1, yScale);
-      ctx.translate(0, FRAME_H * SCALE * (1 - yScale) * 0.5);
+      ctx.translate(0, displayH * (1 - yScale) * 0.5);
     }
 
     // Batch 4: Slip — duck down, squish sprite to show dodging
@@ -2973,7 +3464,7 @@ class Fighter {
       const slipT = 1 - (this.slipTimer / SLIP_DURATION); // 0→1
       const duckAmount = Math.sin(slipT * Math.PI); // smooth arc: up→duck→up
       ctx.scale(1.15, 1 - duckAmount * 0.4); // widen slightly, squish down 40%
-      ctx.translate(0, FRAME_H * SCALE * duckAmount * 0.35); // shift down
+      ctx.translate(0, displayH * duckAmount * 0.35); // shift down
     }
 
     // Flip for facing direction
@@ -2982,8 +3473,8 @@ class Fighter {
     }
 
     // Draw sprite centered
-    const dw = FRAME_W * SCALE;
-    const dh = srcH * SCALE;
+    const dw = fw * sc;
+    const dh = srcH * sc;
     ctx.drawImage(sheet, srcX, srcY, srcW, srcH, -dw/2, -dh/2, dw, dh);
 
     // Phase 4: Injury tint overlay — reddish bruising
@@ -3033,7 +3524,7 @@ class Fighter {
       // Draw small wobble lines above head
       ctx.strokeStyle = `rgba(255,220,100,${0.3 * wobbleIntensity})`;
       ctx.lineWidth = 1;
-      const wy = drawY - FRAME_H * SCALE / 2 - 14;
+      const wy = drawY - displayH / 2 - 14;
       ctx.beginPath();
       ctx.moveTo(drawX - 8 + sway, wy);
       ctx.quadraticCurveTo(drawX + sway * 2, wy - 3, drawX + 8 + sway, wy);
@@ -3111,7 +3602,7 @@ class Fighter {
     const barW = 40;
     const barH = 4;
     const bx = this.x - barW / 2;
-    const by = this.y - FRAME_H * SCALE / 2 - 8;
+    const by = this.y - SM().FRAME_H * SM().SCALE / 2 - 8;
     const healthPct = this.health / this.maxHealth;
 
     // Background
@@ -3308,7 +3799,7 @@ function processCombat(attackers, defenders, particles, camera) {
         const jabDodge = !isHook && slipElapsed < 120; // tight window — duck under jab
         if (isHook || jabDodge) {
           if (game && game.dmgNumbers) {
-            game.dmgNumbers.add(defender.x, defender.y - FRAME_H * SCALE / 2 - 12, 0, false, false,
+            game.dmgNumbers.add(defender.x, defender.y - SM().FRAME_H * SM().SCALE / 2 - 12, 0, false, false,
               jabDodge ? 'DUCK!' : 'SLIP!');
           }
           if (game && game.announcer && (defender.isPlayer || attacker.isPlayer)) {
@@ -3321,7 +3812,10 @@ function processCombat(attackers, defenders, particles, camera) {
 
       const moveDef = isShove ? MOVE_DEFS.shove : (isHook ? MOVE_DEFS.hook : MOVE_DEFS.jab);
       const baseDmg = moveDef.damage;
-      const baseKnock = moveDef.knockback;
+      // Per-mode knockback override
+      const baseKnock = isHook ? T('HOOK_KNOCKBACK', moveDef.knockback) :
+                         isShove ? moveDef.knockback :
+                         T('JAB_KNOCKBACK', moveDef.knockback);
       // Phase 2: low stamina weakens damage
       const staminaMult = attacker.stamina < LOW_STAMINA_THRESHOLD ? LOW_STAMINA_DAMAGE_MULT : 1;
       // Fear weakens the attacker's commitment
@@ -3392,14 +3886,14 @@ function processCombat(attackers, defenders, particles, camera) {
 
       // Phase 4: Floating damage numbers
       if (game && game.dmgNumbers) {
-        const numY = defender.y - FRAME_H * SCALE / 2 - 12;
+        const numY = defender.y - SM().FRAME_H * SM().SCALE / 2 - 12;
         game.dmgNumbers.add(defender.x, numY, result.damage, result.blocked, isHook && !result.blocked);
       }
 
       // Phase 1A: Asymmetric time-based hitstop
       const isKO = defender.state === STATES.KO;
-      let hitstopMs = moveDef.hitstop;
-      if (isKO) hitstopMs = KO_HITSTOP; // long dramatic freeze on KO
+      let hitstopMs = isHook ? T('HOOK_HITSTOP', moveDef.hitstop) : T('JAB_HITSTOP', moveDef.hitstop);
+      if (isKO) hitstopMs = T('KO_HITSTOP', KO_HITSTOP); // long dramatic freeze on KO
       defender.hitstopDuration = hitstopMs;
       defender.hitstopTimer = 0;
       attacker.hitstopDuration = hitstopMs * HITSTOP_ATTACKER_MULT;
@@ -3407,12 +3901,12 @@ function processCombat(attackers, defenders, particles, camera) {
 
       // Phase 1B: Set knockback deceleration curve
       if (!result.blocked) {
-        const kbDur = isHook ? KNOCKBACK_DURATION_HOOK : KNOCKBACK_DURATION_JAB;
+        const kbDur = isHook ? T('KNOCKBACK_DURATION_HOOK', KNOCKBACK_DURATION_HOOK) : T('KNOCKBACK_DURATION_JAB', KNOCKBACK_DURATION_JAB);
         defender.knockbackDuration = kbDur;
         defender.knockbackTimer = 0;
         // Vertical bounce on hooks
         if (isHook) {
-          defender.bounceVy = HOOK_VERTICAL_BOUNCE;
+          defender.bounceVy = T('HOOK_VERTICAL_BOUNCE', HOOK_VERTICAL_BOUNCE);
           defender.bounceY = 0;
         }
         // Batch 5: Impact dust at feet
@@ -3557,7 +4051,7 @@ class AIController {
         if (p === 'brawler' || p === 'swarmer') sizeUpBase = 500;
         else if (p === 'counterpuncher') sizeUpBase = 1200;
         else if (p === 'coward') sizeUpBase = 1000;
-        this.stateDuration = sizeUpBase + Math.random() * 1200 * (1 - this.difficulty * 0.5);
+        this.stateDuration = sizeUpBase + T('AI_SIZING_UP_ADD', 0) + Math.random() * 1200 * (1 - this.difficulty * 0.5);
         this.strafeDir = Math.random() > 0.5 ? 1 : -1;
         break;
       case AI_STATES.PRESSING:
@@ -3613,7 +4107,7 @@ class AIController {
     const maxIdx = Math.min(patterns.length - 1, Math.floor(1 + this.difficulty * (patterns.length - 1)));
     this.comboPattern = patterns[randInt(0, maxIdx)];
     this.comboStep = 0;
-    this.comboDelay = 80 + Math.random() * 60;
+    this.comboDelay = T('AI_COMBO_DELAY_BASE', 80) + Math.random() * T('AI_COMBO_DELAY_RANGE', 60);
   }
 
   update(dt, target) {
@@ -3864,7 +4358,7 @@ class AIController {
       let approachSpd = 0.6;
       if (p === 'brawler' || p === 'swarmer') approachSpd = 0.75;
       else if (p === 'coward') approachSpd = 0.4;
-      const spd = f.moveSpeed * approachSpd;
+      const spd = f.moveSpeed * approachSpd * T('AI_APPROACH_SPEED_MULT', 1);
       f.vx = Math.cos(ang) * spd;
       f.vy = Math.sin(ang) * spd;
       if (f.state !== STATES.WALK) f.setState(STATES.WALK);
@@ -3883,7 +4377,7 @@ class AIController {
       if (f.state !== STATES.WALK) f.setState(STATES.WALK);
 
       // Phase 4: More aggressive probing — AI was too passive
-      let probeChance = 0.008 * this.difficulty;
+      let probeChance = 0.008 * this.difficulty * T('AI_PROBE_CHANCE_MULT', 1);
       if (p === 'swarmer') probeChance *= 2;
       if (p === 'brawler') probeChance *= 1.5;
       if (p === 'counterpuncher') probeChance *= 0.5;
@@ -3926,7 +4420,7 @@ class AIController {
     if (d > attackRange) {
       // Close distance aggressively
       const ang = angle(f, target);
-      const spd = f.moveSpeed * (0.8 + this.difficulty * 0.2);
+      const spd = f.moveSpeed * (0.8 + this.difficulty * 0.2) * T('AI_APPROACH_SPEED_MULT', 1);
       f.vx = Math.cos(ang) * spd;
       f.vy = Math.sin(ang) * spd;
       if (f.state !== STATES.WALK) f.setState(STATES.WALK);
@@ -3951,7 +4445,7 @@ class AIController {
 
         this.comboStep++;
         // Phase 4: Tighter combo timing — less dead time between hits
-        this.comboDelay = 60 + Math.random() * 80 * (1 - this.difficulty * 0.5);
+        this.comboDelay = T('AI_COMBO_DELAY_BASE', 60) + Math.random() * T('AI_COMBO_DELAY_RANGE', 80) * (1 - this.difficulty * 0.5);
 
         // If combo finished, pick a new one or keep pressing
         if (this.comboStep >= this.comboPattern.length) {
@@ -5666,7 +6160,7 @@ class Game {
           // Recalculate derived stats
           fighter.maxHealth = MAX_HEALTH * (0.8 + fighter.traits.toughness * 0.4);
           fighter.health = fighter.maxHealth;
-          fighter.baseMoveSpeed = 1.2 + fighter.traits.speed * 0.8;
+          fighter.baseMoveSpeed = T('BASE_MOVE_SPEED_MIN', 1.2) + fighter.traits.speed * T('BASE_MOVE_SPEED_RANGE', 0.8);
           fighter.damageMult = 0.7 + fighter.traits.power * 0.6;
           this.player = fighter;
         }
@@ -6444,6 +6938,15 @@ class Game {
     }
   }
 
+  _triggerCelebration() {
+    // Winners celebrate — transition alive fighters to CELEBRATE state
+    for (const f of this.fighters) {
+      if (f.alive && f.state === STATES.IDLE && f.charDef.celebrate && f.charDef.celebrateFrames > 0) {
+        f.setState(STATES.CELEBRATE);
+      }
+    }
+  }
+
   _checkGameOver(dt) {
     if (this.gameOver) {
       this.gameOverTimer += dt;
@@ -6461,6 +6964,7 @@ class Game {
         if (!this.announcer.text || this.announcer.life <= 0) {
           this.announcer.show(winner, 'R: Rematch · Q: Menu', 999999);
         }
+        this._triggerCelebration();
       }
     } else if (this.mode === 'custom') {
       // Custom: player KO = loss, all enemies dead = win
@@ -6480,6 +6984,7 @@ class Game {
           this.outroTimer = 0;
           const survived = alliesAlive.length;
           this.announcer.show('CLEARED', `${survived} standing · R: Rematch · Q: Menu`, 999999);
+          this._triggerCelebration();
         } else if (alliesAlive.length === 0) {
           this.gameOver = true;
           this.slowmo = 1500;
@@ -6984,46 +7489,44 @@ function gameLoop(timestamp) {
       }
     }
 
-    // Global input — pause
-    if (input.wasPressed('Escape') && !game.gameOver) {
+    // Global input — ESC opens pause menu (works anytime during a match)
+    if (input.wasPressed('Escape')) {
       gameState = 'paused';
       pauseOverlay.style.display = 'flex';
+      // Update pause overlay buttons based on context
+      _updatePauseButtons();
     }
-    // Restart (not in tournament — no do-overs)
-    if (input.wasPressed('KeyR') && !tournament) {
-      restartGame();
-    }
-    // Tournament: Enter or Q to leave fight when game over
-    if (tournament && game.gameOver && game.gameOverTimer > 1500) {
-      if (input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('KeyQ')) {
-        _tournamentFightEnded();
+    // Game over controls (only when fight is settled)
+    if (game.gameOver && game.gameOverTimer > 1500) {
+      if (tournament) {
+        if (input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('KeyQ')) {
+          _tournamentFightEnded();
+        }
+      } else {
+        if (input.wasPressed('KeyR')) restartGame();
+        if (input.wasPressed('KeyQ')) quitToMenu();
       }
-    }
-    // Normal: Q to quit
-    if (!tournament && input.wasPressed('KeyQ') && game.gameOver) {
-      quitToMenu();
     }
   }
 
   // Pause menu keyboard controls
   if (gameState === 'paused') {
     if (input.wasPressed('Escape')) {
+      // ESC again = resume
       resumeGame();
     }
     if (input.wasPressed('Enter') || input.wasPressed('KeyQ')) {
+      // Enter/Q = quit to menu (forfeit in tournament)
       if (tournament) {
-        // In tournament, quitting a fight = forfeit
-        pauseOverlay.style.display = 'none';
-        gameState = 'playing';
-        // Force player KO to trigger elimination
-        if (game && game.player && game.player.alive) {
-          game.player.health = 0;
-          game.player.alive = false;
-          game.player.setState(STATES.KO);
-        }
+        _forfeitTournament();
       } else {
         quitToMenu();
       }
+    }
+    if (input.wasPressed('KeyR') && !tournament) {
+      // R = restart from pause
+      pauseOverlay.style.display = 'none';
+      restartGame();
     }
   }
 
@@ -7066,6 +7569,37 @@ function selectGang(el) {
   document.querySelectorAll('.gang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   selectedGang = el.dataset.gang;
+}
+
+// Graphics mode toggle — 16-bit / 32-bit
+function setSpriteMode(mode) {
+  if (spriteMode === mode) return;
+  spriteMode = mode;
+
+  // Update toggle button visuals
+  const btn16 = document.getElementById('mode-16');
+  const btn32 = document.getElementById('mode-32');
+  if (btn16 && btn32) {
+    btn16.classList.toggle('selected', mode === '16');
+    btn32.classList.toggle('selected', mode === '32');
+  }
+
+  // Reload assets for the new mode
+  const btns = document.querySelectorAll('#quickstart-section .menu-btn');
+  btns.forEach(b => b.disabled = true);
+
+  // Show loading indicator
+  ctx.fillStyle = '#0a0806';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#c4943a';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOADING...', CANVAS_W / 2, CANVAS_H / 2);
+
+  loadAssets().then(() => {
+    btns.forEach(b => b.disabled = false);
+    console.log(`Switched to ${mode === '32' ? '32-BIT' : '16-BIT'} mode — ${Object.keys(assets).length} assets loaded`);
+  });
 }
 
 function updateMenuHighlight() {
@@ -7151,6 +7685,30 @@ function restartGame() {
 function resumeGame() {
   gameState = 'playing';
   pauseOverlay.style.display = 'none';
+}
+
+function _updatePauseButtons() {
+  // Dynamically set pause overlay content based on context
+  const isTourney = !!tournament;
+  const isGameOver = game && game.gameOver;
+  pauseOverlay.innerHTML = `
+    <div class="pause-text">${isGameOver ? 'FIGHT OVER' : 'PAUSED'}</div>
+    ${!isGameOver ? '<button class="menu-btn" onclick="resumeGame()">RESUME <span style="font-size:8px;color:#6a5a4a;">[ESC]</span></button>' : ''}
+    ${!isTourney && !isGameOver ? '<button class="menu-btn" onclick="pauseOverlay.style.display=\'none\';restartGame()">RESTART <span style="font-size:8px;color:#6a5a4a;">[R]</span></button>' : ''}
+    <button class="menu-btn" onclick="${isTourney ? '_forfeitTournament()' : 'quitToMenu()'}">
+      ${isTourney ? 'FORFEIT' : 'QUIT TO MENU'} <span style="font-size:8px;color:#6a5a4a;">[ENTER]</span>
+    </button>
+  `;
+}
+
+function _forfeitTournament() {
+  pauseOverlay.style.display = 'none';
+  gameState = 'playing';
+  if (game && game.player && game.player.alive) {
+    game.player.health = 0;
+    game.player.alive = false;
+    game.player.setState(STATES.KO);
+  }
 }
 
 function quitToMenu() {
