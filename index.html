@@ -40,7 +40,7 @@
     align-items: center;
     gap: 16px;
     padding: 40px 60px;
-    background: rgba(10, 10, 10, 0.95);
+    background: rgba(10, 10, 10, 0.82);
     border: 2px solid #3a2a1a;
     position: relative;
   }
@@ -269,8 +269,7 @@
 
 <div id="ui-overlay">
   <div id="menu-screen">
-    <h1>YARD</h1>
-    <div class="subtitle">CALIFORNIA STATE PENITENTIARY</div>
+    <h1>CELLIES</h1>
     <div class="menu-section">
       <div class="menu-section-title">SELECT YOUR SET</div>
       <div class="gang-select" id="gang-select">
@@ -295,8 +294,8 @@
     <div class="menu-section" style="padding:4px 0;">
       <div class="menu-section-title">GRAPHICS</div>
       <div style="display:flex;gap:8px;justify-content:center;">
-        <button class="cfg-btn selected" id="mode-16" onclick="setSpriteMode('16')" style="padding:4px 14px;">16-BIT</button>
-        <button class="cfg-btn" id="mode-32" onclick="setSpriteMode('32')" style="padding:4px 14px;">32-BIT</button>
+        <button class="cfg-btn" id="mode-16" onclick="setSpriteMode('16')" style="padding:4px 14px;">16-BIT</button>
+        <button class="cfg-btn selected" id="mode-32" onclick="setSpriteMode('32')" style="padding:4px 14px;">32-BIT</button>
       </div>
     </div>
     <div class="menu-section" id="quickstart-section">
@@ -375,23 +374,23 @@
 </div>
 
 <!-- JS Modules — load order matters (dependency chain) -->
-<script src="js/constants.js"></script>
-<script src="js/spritemode.js"></script>
-<script src="js/sound.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/input.js"></script>
-<script src="js/particles.js"></script>
-<script src="js/camera.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/fighter.js"></script>
-<script src="js/combat.js"></script>
-<script src="js/ai.js"></script>
-<script src="js/gang.js"></script>
-<script src="js/environment.js"></script>
-<script src="js/spectator.js"></script>
-<script src="js/tournament.js"></script>
-<script src="js/game.js"></script>
-<script src="js/main.js"></script>
+<script src="js/constants.js?v=2"></script>
+<script src="js/spritemode.js?v=2"></script>
+<script src="js/sound.js?v=2"></script>
+<script src="js/utils.js?v=2"></script>
+<script src="js/input.js?v=2"></script>
+<script src="js/particles.js?v=2"></script>
+<script src="js/camera.js?v=2"></script>
+<script src="js/ui.js?v=2"></script>
+<script src="js/fighter.js?v=2"></script>
+<script src="js/combat.js?v=2"></script>
+<script src="js/ai.js?v=2"></script>
+<script src="js/gang.js?v=2"></script>
+<script src="js/environment.js?v=2"></script>
+<script src="js/spectator.js?v=2"></script>
+<script src="js/tournament.js?v=2"></script>
+<script src="js/game.js?v=2"></script>
+<script src="js/main.js?v=2"></script>
 
 </body>
 </html>
