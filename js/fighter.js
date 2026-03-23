@@ -158,10 +158,10 @@ class Fighter {
     this.hitRegistered = false; // prevent multi-hit per swing
     this.hitTargets = new Set();
 
-    // Idle variety — not every NPC plays the dedicated idle animation
-    // Some just stand on walk frame 0 for a more natural yard feel
-    // Player always uses idle if available; NPCs ~40% chance
+    // Idle variety — NPCs cycle between dedicated idle animation and standing still
+    // Player always uses idle if available
     this.useIdleAnim = (this.charDef.idle && this.charDef.idleFrames > 0) ? Math.random() < 0.4 : false;
+    this.idleSwapTimer = 3000 + Math.random() * 8000; // time until next idle style swap
   }
 
   _derivePersonality() {
@@ -985,6 +985,15 @@ class Fighter {
     switch (this.state) {
       case STATES.IDLE: {
         const hasIdle = this.charDef.idle && this.charDef.idleFrames > 0;
+        // NPCs periodically swap between idle anim and standing still
+        if (!this.isPlayer && hasIdle) {
+          this.idleSwapTimer -= dt;
+          if (this.idleSwapTimer <= 0) {
+            this.useIdleAnim = !this.useIdleAnim;
+            this.idleSwapTimer = 4000 + Math.random() * 10000;
+            if (!this.useIdleAnim) this.animFrame = 0; // reset to standing
+          }
+        }
         if (hasIdle && (this.isPlayer || this.useIdleAnim)) {
           // Dedicated idle animation (south-facing breathing, etc.)
           const idleSpd = _as.idle || ANIM_IDLE_SPD;
@@ -1181,17 +1190,20 @@ class Fighter {
     const sheet = assets[sheetKey];
     if (!sheet) return;
 
-    // Shadow — small subtle ellipse at feet, drawn BEFORE sprite so it's underneath
+    // Shadow — tiny ground-contact ellipse, anchored to actual foot position
     if (this.alive || this.state === STATES.KO) {
-      const shadowAlpha = this.state === STATES.KO ? 0.08 : 0.12;
-      const shadowSc = this.state === STATES.KNOCKDOWN ? 1.4 : 1;
-      const shadowW = (displayH * 0.16) * shadowSc; // narrower — just a ground contact hint
-      const shadowH = (displayH * 0.045) * shadowSc; // very flat
+      const isDown = this.state === STATES.KNOCKDOWN || this.state === STATES.KO;
+      const shadowAlpha = isDown ? 0.06 : 0.09;
+      const shadowSc = isDown ? 1.6 : 1;
+      // Small, subtle — just enough to ground the character
+      const shadowW = (displayH * 0.12) * shadowSc;
+      const shadowH = (displayH * 0.03) * shadowSc;
       ctx.globalAlpha = shadowAlpha;
       ctx.fillStyle = '#000000';
       ctx.beginPath();
-      // Position at the very bottom of the sprite (feet), +2 so it peeks just below
-      ctx.ellipse(Math.floor(this.x), Math.floor(this.y + displayH / 2 + 2), shadowW, shadowH, 0, 0, Math.PI * 2);
+      // Anchor to feet (drawY accounts for bounce/breathing)
+      const feetY = drawY + displayH / 2 + 1;
+      ctx.ellipse(Math.floor(drawX), Math.floor(feetY), shadowW, shadowH, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
@@ -1243,14 +1255,18 @@ class Fighter {
 
     // Degradation sway — hurt fighters lean/sway while idle or walking
     if (T('DEGRADATION_SWAY', false) && this.alive &&
-        (this.state === STATES.IDLE || this.state === STATES.WALK) &&
-        this.state !== STATES.KO && this.state !== STATES.KNOCKDOWN) {
+        (this.state === STATES.IDLE || this.state === STATES.WALK)) {
       const healthPct = this.health / this.maxHealth;
-      if (healthPct < 0.5) {
-        const swayIntensity = (1 - healthPct * 2) * 0.06; // up to ~3.4 degrees at near-death
-        const swayFreq = 0.003 + (1 - healthPct) * 0.002; // faster sway when more hurt
+      if (healthPct < 0.6) {
+        const severity = 1 - healthPct / 0.6; // 0→1 as health goes from 60%→0%
+        const swayIntensity = severity * 0.1; // up to ~5.7 degrees at near-death
+        const swayFreq = 0.0025 + severity * 0.003; // faster sway when more hurt
         const sway = Math.sin(Date.now() * swayFreq + this.x * 0.1) * swayIntensity;
         ctx.rotate(sway);
+        // Slight droop — hurt fighters lean forward
+        if (severity > 0.4) {
+          ctx.translate(0, severity * 2);
+        }
       }
     }
 
@@ -1264,43 +1280,55 @@ class Fighter {
     const dh = srcH * sc;
     ctx.drawImage(sheet, srcX, srcY, srcW, srcH, -dw/2, -dh/2, dw, dh);
 
-    // Phase 4: Injury tint overlay — reddish bruising (amplified for 32-bit)
-    if (this.injuries > 15) {
-      const injAlpha = Math.min(0.4, (this.injuries - 15) / 150);
-      ctx.globalAlpha = injAlpha;
+    // --- Tint effects: use 'source-atop' to only color visible sprite pixels, not the bounding box ---
+    ctx.globalCompositeOperation = 'source-atop';
+
+    // Injury tint — reddish bruising that gets obvious as fighter deteriorates
+    if (this.injuries > 10) {
+      ctx.globalAlpha = Math.min(0.35, (this.injuries - 10) / 120);
       ctx.fillStyle = '#880022';
       ctx.fillRect(-dw/2, -dh/2, dw, dh);
       ctx.globalAlpha = 1;
     }
-
-    // Batch 4: Heat glow — fighter pulses warm when momentum is high
-    if (this.heat > 25) {
-      const heatIntensity = (this.heat - 25) / 75; // 0→1 over 25-100 range
-      const pulse = 0.5 + Math.sin(Date.now() * 0.006) * 0.5; // slow pulse
-      ctx.globalAlpha = heatIntensity * 0.15 * (0.7 + pulse * 0.3);
-      ctx.fillStyle = this.heat > 70 ? '#ff4400' : '#ff8800';
-      ctx.fillRect(-dw/2 - 2, -dh/2 - 2, dw + 4, dh + 4);
+    // Health desaturation — badly hurt fighters look washed out
+    const healthPct = this.health / this.maxHealth;
+    if (healthPct < 0.35 && this.alive) {
+      ctx.globalAlpha = (1 - healthPct / 0.35) * 0.15;
+      ctx.fillStyle = '#222222';
+      ctx.fillRect(-dw/2, -dh/2, dw, dh);
       ctx.globalAlpha = 1;
     }
 
-    // Batch 5: Hit confirm — white outline flash when you land a clean hit
+    // Batch 4: Heat glow — warm tint on sprite pixels only
+    if (this.heat > 25) {
+      const heatIntensity = (this.heat - 25) / 75;
+      const pulse = 0.5 + Math.sin(Date.now() * 0.006) * 0.5;
+      ctx.globalAlpha = heatIntensity * 0.12 * (0.7 + pulse * 0.3);
+      ctx.fillStyle = this.heat > 70 ? '#ff4400' : '#ff8800';
+      ctx.fillRect(-dw/2, -dh/2, dw, dh);
+      ctx.globalAlpha = 1;
+    }
+
+    // Batch 5: Hit confirm — brief white flash on sprite pixels
     if (this.hitConfirmTimer > 0) {
       const t = this.hitConfirmTimer / HIT_CONFIRM_DURATION;
-      ctx.globalAlpha = t * 0.6;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-dw/2 - 1, -dh/2 - 1, dw + 2, dh + 2);
+      ctx.globalAlpha = t * 0.45;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-dw/2, -dh/2, dw, dh);
       ctx.globalAlpha = 1;
     }
 
-    // Batch 5: Failed input — brief red tint when attack can't execute
+    // Batch 5: Failed input — brief red tint on sprite pixels
     if (this.failedInputTimer > 0) {
       const t = this.failedInputTimer / FAILED_INPUT_FLASH;
-      ctx.globalAlpha = t * 0.25;
+      ctx.globalAlpha = t * 0.2;
       ctx.fillStyle = '#ff0000';
       ctx.fillRect(-dw/2, -dh/2, dw, dh);
       ctx.globalAlpha = 1;
     }
+
+    // Restore normal compositing
+    ctx.globalCompositeOperation = 'source-over';
 
     ctx.restore();
 

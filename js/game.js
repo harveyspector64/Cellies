@@ -1019,18 +1019,20 @@ class Game {
 
   _updateCelebration() {
     if (!this._celebrationPending || !this.gameOver) return;
-    let allCelebrating = true;
+    let allDone = true;
     for (const f of this.fighters) {
       if (!f.alive || f.state === STATES.KO || f.state === STATES.KNOCKDOWN) continue;
       if (f.state === STATES.CELEBRATE) continue;
-      if (f.charDef.celebrate && f.charDef.celebrateFrames > 0 &&
-          (f.state === STATES.IDLE || f.state === STATES.WALK)) {
+      // No celebrate art — skip, don't block others
+      if (!f.charDef.celebrate || f.charDef.celebrateFrames <= 0) continue;
+      if (f.isPlayer) continue; // let player celebrate manually via T key
+      if (f.state === STATES.IDLE || f.state === STATES.WALK) {
         f.setState(STATES.CELEBRATE);
       } else {
-        allCelebrating = false; // still waiting for this fighter to finish their action
+        allDone = false; // still waiting for this fighter to finish their action
       }
     }
-    if (allCelebrating) this._celebrationPending = false;
+    if (allDone) this._celebrationPending = false;
   }
 
   _checkGameOver(dt) {
@@ -1271,46 +1273,72 @@ class Game {
       ctx.globalAlpha = 1;
     }
 
-    // Phase: names — fighter cards slide in from sides
+    // Phase: names — fighter cards slide in from sides with sprites
     if (this.introPhase === 'names' || this.introPhase === 'go') {
       const nameT = clamp((this.introTimer - 800) / 400, 0, 1);
       const easeOut = 1 - Math.pow(1 - nameT, 3);
+      const fw = SM().FRAME_W, fh = SM().FRAME_H, sc = SM().SCALE;
+      const spriteScale = sc * 1.2; // slightly bigger than in-game for dramatic effect
 
       // Player card (left side)
-      const pSlideX = -200 + easeOut * 200;
+      const pSlideX = -300 + easeOut * 300;
       const pGC = GANG_COLORS[p.gangId];
       ctx.save();
       ctx.translate(pSlideX, 0);
-      // Name block
-      ctx.fillStyle = 'rgba(10,8,5,0.85)';
-      ctx.fillRect(20, cy - 35, 280, 50);
+      // Name block — wider to accommodate sprite
+      ctx.fillStyle = 'rgba(10,8,5,0.88)';
+      ctx.fillRect(20, cy - 45, 320, 70);
       ctx.fillStyle = pGC ? pGC.primary : '#c4943a';
-      ctx.fillRect(20, cy - 35, 4, 50);
+      ctx.fillRect(20, cy - 45, 4, 70);
+      // Player sprite — idle frame 0, facing right (toward opponent)
+      const pSheet = assets[p.charDef.idle] || assets[p.charDef.walk];
+      if (pSheet) {
+        const sprW = fw * spriteScale, sprH = fh * spriteScale;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(pSheet, 0, 0, fw, fh,
+          34, cy - sprH / 2, sprW, sprH);
+      }
+      // Text offset to right of sprite
+      const pTextX = 34 + fw * spriteScale + 10;
       ctx.fillStyle = '#c4943a';
       ctx.font = '10px "Press Start 2P", monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(p.name || 'PLAYER', 34, cy - 14);
+      ctx.fillText(p.name || 'PLAYER', pTextX, cy - 12);
       ctx.fillStyle = pGC ? pGC.light : '#8a7a5a';
       ctx.font = '6px "Press Start 2P", monospace';
-      ctx.fillText(`${pGC ? pGC.name : ''} · ${p.personality.toUpperCase()}`, 34, cy + 2);
+      ctx.fillText(`${pGC ? pGC.name : ''} · ${p.personality.toUpperCase()}`, pTextX, cy + 6);
       ctx.restore();
 
       // Enemy card (right side)
-      const eSlideX = 200 - easeOut * 200;
+      const eSlideX = 300 - easeOut * 300;
       const eGC = GANG_COLORS[e.gangId];
       ctx.save();
       ctx.translate(eSlideX, 0);
-      ctx.fillStyle = 'rgba(10,8,5,0.85)';
-      ctx.fillRect(CANVAS_W - 300, cy - 35, 280, 50);
+      ctx.fillStyle = 'rgba(10,8,5,0.88)';
+      ctx.fillRect(CANVAS_W - 340, cy - 45, 320, 70);
       ctx.fillStyle = eGC ? eGC.primary : '#cc4422';
-      ctx.fillRect(CANVAS_W - 24, cy - 35, 4, 50);
+      ctx.fillRect(CANVAS_W - 24, cy - 45, 4, 70);
+      // Enemy sprite — idle frame 0, facing left (toward player) — flip horizontally
+      const eSheet = assets[e.charDef.idle] || assets[e.charDef.walk];
+      if (eSheet) {
+        const sprW = fw * spriteScale, sprH = fh * spriteScale;
+        ctx.imageSmoothingEnabled = false;
+        ctx.save();
+        ctx.translate(CANVAS_W - 34, cy);
+        ctx.scale(-1, 1); // mirror to face left
+        ctx.drawImage(eSheet, 0, 0, fw, fh,
+          0, -sprH / 2, sprW, sprH);
+        ctx.restore();
+      }
+      // Text offset to left of sprite
+      const eTextX = CANVAS_W - 34 - fw * spriteScale - 10;
       ctx.fillStyle = '#c4943a';
       ctx.font = '10px "Press Start 2P", monospace';
       ctx.textAlign = 'right';
-      ctx.fillText(e.name || 'OPPONENT', CANVAS_W - 34, cy - 14);
+      ctx.fillText(e.name || 'OPPONENT', eTextX, cy - 12);
       ctx.fillStyle = eGC ? eGC.light : '#8a7a5a';
       ctx.font = '6px "Press Start 2P", monospace';
-      ctx.fillText(`${eGC ? eGC.name : ''} · ${e.personality.toUpperCase()}`, CANVAS_W - 34, cy + 2);
+      ctx.fillText(`${eGC ? eGC.name : ''} · ${e.personality.toUpperCase()}`, eTextX, cy + 6);
       ctx.restore();
 
       // VS
@@ -1342,25 +1370,68 @@ class Game {
   _drawStats1v1(ctx) {
     const p = this.fighters[0]; // player
     const e = this.fighters[1]; // enemy
+    const playerWon = p && p.alive && p.state !== STATES.KO;
 
     const cx = CANVAS_W / 2;
-    let y = 120;
+    const panelW = 340;
+    const panelH = 280;
+    const panelX = cx - panelW / 2;
+    const panelY = 90;
 
-    // Title
-    ctx.fillStyle = '#c4943a';
+    // Panel background
+    ctx.fillStyle = 'rgba(10, 8, 5, 0.85)';
+    ctx.fillRect(panelX, panelY, panelW, panelH);
+    ctx.strokeStyle = '#3a2a1a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(panelX, panelY, panelW, panelH);
+    // Inner border
+    ctx.strokeStyle = '#2a1a0a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(panelX + 4, panelY + 4, panelW - 8, panelH - 8);
+
+    let y = panelY + 30;
+
+    // Winner sprite — animated celebrate/idle loop in the panel
+    const winner = playerWon ? p : e;
+    const wSheet = assets[winner.charDef.celebrate] || assets[winner.charDef.idle] || assets[winner.charDef.walk];
+    if (wSheet) {
+      const fw = SM().FRAME_W, fh = SM().FRAME_H, sc = SM().SCALE;
+      const sprScale = sc * 1.4;
+      const sprW = fw * sprScale, sprH = fh * sprScale;
+      // Animate the sprite
+      const wFrameCount = winner.charDef.celebrateFrames || winner.charDef.idleFrames || winner.charDef.walkFrames || 4;
+      const wFrame = Math.floor((this.gameOverTimer / 150) % wFrameCount);
+      ctx.imageSmoothingEnabled = false;
+      // Draw centered above the title
+      ctx.drawImage(wSheet, wFrame * fw, 0, fw, fh,
+        cx - sprW / 2, y - sprH + 5, sprW, sprH);
+      y += 8;
+    }
+
+    // Result title
+    ctx.fillStyle = playerWon ? '#c4943a' : '#aa3333';
     ctx.font = '16px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('FIGHT STATS', cx, y);
-    y += 40;
+    ctx.fillText(playerWon ? 'VICTORY' : 'DEFEAT', cx, y);
+    y += 35;
+
+    // Divider line
+    ctx.strokeStyle = '#3a2a1a';
+    ctx.beginPath();
+    ctx.moveTo(panelX + 20, y);
+    ctx.lineTo(panelX + panelW - 20, y);
+    ctx.stroke();
+    y += 18;
 
     // Column headers
     ctx.font = '7px "Press Start 2P", monospace';
-    ctx.fillStyle = '#8a7a5a';
+    ctx.fillStyle = playerWon ? '#c4943a' : '#aa6644';
     ctx.textAlign = 'right';
     ctx.fillText(p.name, cx - 30, y);
+    ctx.fillStyle = !playerWon ? '#c4943a' : '#aa6644';
     ctx.textAlign = 'left';
     ctx.fillText(e.name, cx + 30, y);
-    y += 25;
+    y += 22;
 
     // Stats rows
     const stats = [
@@ -1374,19 +1445,27 @@ class Game {
 
     ctx.font = '6px "Press Start 2P", monospace';
     for (const [label, pVal, eVal] of stats) {
-      ctx.fillStyle = '#6a5a4a';
+      // Highlight the winner of each stat
+      const pNum = parseInt(pVal) || 0;
+      const eNum = parseInt(eVal) || 0;
+      const isLowerBetter = label === 'HITS TAKEN' || label === 'INJURY LEVEL';
+      const pWins = isLowerBetter ? pNum < eNum : pNum > eNum;
+      const eWins = isLowerBetter ? eNum < pNum : eNum > pNum;
+
+      ctx.fillStyle = '#5a4a3a';
       ctx.textAlign = 'center';
       ctx.fillText(label, cx, y);
 
-      ctx.fillStyle = '#c4943a';
+      ctx.fillStyle = pWins ? '#c4943a' : '#6a5a4a';
       ctx.textAlign = 'right';
       ctx.fillText(String(pVal), cx - 40, y);
+      ctx.fillStyle = eWins ? '#c4943a' : '#6a5a4a';
       ctx.textAlign = 'left';
       ctx.fillText(String(eVal), cx + 40, y);
       y += 18;
     }
 
-    y += 15;
+    y += 12;
     ctx.fillStyle = '#5a4a3a';
     ctx.font = '6px "Press Start 2P", monospace';
     ctx.textAlign = 'center';

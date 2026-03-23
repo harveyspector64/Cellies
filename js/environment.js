@@ -514,3 +514,467 @@ class ProceduralCell {
     // No overlay for cell (no fence/razor wire)
   }
 }
+
+// ============================================================
+// PROCEDURAL MEDICAL BAY — Tournament loss / recovery screen
+// ============================================================
+class ProceduralMedical {
+  constructor() {
+    // Small confined room — prison infirmary, not a hospital
+    this.roomW = 320;
+    this.roomH = 200;
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = this.roomW;
+    this.canvas.height = this.roomH;
+    this.ctx = this.canvas.getContext('2d');
+    this._generate();
+  }
+
+  _generate() {
+    const c = this.ctx;
+    const w = this.roomW;
+    const h = this.roomH;
+    const rng = mulberry32(42);
+
+    // Floor — pale greenish-grey linoleum tile
+    const baseR = 145, baseG = 155, baseB = 140;
+    for (let bx = 0; bx < w; bx += 3) {
+      for (let by = 0; by < h; by += 3) {
+        const noise = (rng() - 0.5) * 10;
+        c.fillStyle = `rgb(${Math.floor(baseR + noise)},${Math.floor(baseG + noise)},${Math.floor(baseB + noise)})`;
+        c.fillRect(bx, by, 3, 3);
+      }
+    }
+
+    // Tile grid lines
+    c.strokeStyle = 'rgba(0,0,0,0.05)';
+    c.lineWidth = 1;
+    for (let x = 0; x < w; x += 24) {
+      c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke();
+    }
+    for (let y = 0; y < h; y += 24) {
+      c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke();
+    }
+
+    // Walls — three sides (top, left, right)
+    const wallH = 48;
+    const wallSide = 20;
+    // Back wall
+    c.fillStyle = '#8a9088';
+    c.fillRect(0, 0, w, wallH);
+    c.fillStyle = '#6a7068';
+    c.fillRect(0, wallH - 3, w, 3);
+    // Left wall
+    c.fillStyle = '#7e8880';
+    c.fillRect(0, 0, wallSide, h);
+    c.fillStyle = '#6a7068';
+    c.fillRect(wallSide - 2, wallH, 2, h - wallH);
+    // Right wall
+    c.fillStyle = '#7e8880';
+    c.fillRect(w - wallSide, 0, wallSide, h);
+    c.fillStyle = '#6a7068';
+    c.fillRect(w - wallSide, wallH, 2, h - wallH);
+
+    // Wall texture
+    c.strokeStyle = 'rgba(0,0,0,0.03)';
+    for (let y = 6; y < wallH - 3; y += 5 + Math.floor(rng() * 3)) {
+      c.beginPath(); c.moveTo(wallSide, y); c.lineTo(w - wallSide, y); c.stroke();
+    }
+
+    // Medical cot/bed — left-center of room
+    const bedX = wallSide + 28;
+    const bedY = wallH + 22;
+    const bedW = 90;
+    const bedH = 36;
+
+    // Bed shadow
+    c.fillStyle = 'rgba(0,0,0,0.08)';
+    c.fillRect(bedX + 3, bedY + bedH + 2, bedW, 6);
+
+    // Frame — metal grey
+    c.fillStyle = '#585858';
+    c.fillRect(bedX, bedY, bedW, bedH);
+    c.fillStyle = '#4a4a4a';
+    c.fillRect(bedX, bedY, bedW, 2);
+    c.fillRect(bedX, bedY + bedH - 2, bedW, 2);
+    c.fillRect(bedX, bedY, 2, bedH);
+    c.fillRect(bedX + bedW - 2, bedY, 2, bedH);
+    // Headboard — slightly taller
+    c.fillStyle = '#505050';
+    c.fillRect(bedX, bedY - 4, 3, bedH + 4);
+    // Mattress
+    c.fillStyle = '#c4c0b4';
+    c.fillRect(bedX + 3, bedY + 3, bedW - 6, bedH - 6);
+    // Pillow
+    c.fillStyle = '#ccc8bc';
+    c.fillRect(bedX + 5, bedY + 7, 18, bedH - 14);
+    c.fillStyle = '#d4d0c4';
+    c.fillRect(bedX + 6, bedY + 8, 16, bedH - 16);
+    // Sheet wrinkles
+    c.strokeStyle = 'rgba(0,0,0,0.04)';
+    for (let x = bedX + 26; x < bedX + bedW - 8; x += 10 + Math.floor(rng() * 6)) {
+      c.beginPath(); c.moveTo(x, bedY + 5); c.lineTo(x + 3, bedY + bedH - 5); c.stroke();
+    }
+    // Bed legs
+    c.fillStyle = '#404040';
+    c.fillRect(bedX, bedY + bedH, 3, 5);
+    c.fillRect(bedX + bedW - 3, bedY + bedH, 3, 5);
+
+    // IV stand — between bed and right side
+    const ivX = bedX + bedW + 10;
+    const ivY = bedY - 14;
+    c.fillStyle = '#606060';
+    c.fillRect(ivX, ivY, 2, 52);
+    c.fillRect(ivX - 4, ivY + 48, 10, 2);
+    // IV bag
+    c.fillStyle = '#a0c0d0';
+    c.fillRect(ivX - 3, ivY, 8, 11);
+    c.fillStyle = '#80a8b8';
+    c.fillRect(ivX - 2, ivY + 1, 6, 9);
+    // Tube
+    c.strokeStyle = 'rgba(120,160,170,0.6)';
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(ivX + 1, ivY + 11);
+    c.quadraticCurveTo(ivX + 1, ivY + 28, bedX + bedW - 4, bedY + 8);
+    c.stroke();
+
+    // Supply cabinet against back wall, right side
+    const cabX = w - wallSide - 46;
+    const cabY = wallH + 1;
+    const cabW = 40;
+    const cabH = 46;
+    c.fillStyle = '#6e7870';
+    c.fillRect(cabX, cabY, cabW, cabH);
+    // Drawers
+    c.fillStyle = '#5e6860';
+    c.fillRect(cabX + 2, cabY + 2, cabW - 4, 13);
+    c.fillRect(cabX + 2, cabY + 17, cabW - 4, 13);
+    c.fillRect(cabX + 2, cabY + 32, cabW - 4, 12);
+    // Handles
+    c.fillStyle = '#8a928a';
+    c.fillRect(cabX + cabW / 2 - 3, cabY + 10, 6, 2);
+    c.fillRect(cabX + cabW / 2 - 3, cabY + 25, 6, 2);
+    c.fillRect(cabX + cabW / 2 - 3, cabY + 39, 6, 2);
+
+    // Clipboard on wall above cabinet
+    c.fillStyle = '#907860';
+    c.fillRect(cabX + cabW / 2 - 5, wallH - 18, 10, 16);
+    c.fillStyle = '#d8d0c0';
+    c.fillRect(cabX + cabW / 2 - 4, wallH - 16, 8, 12);
+    // Clip
+    c.fillStyle = '#808080';
+    c.fillRect(cabX + cabW / 2 - 3, wallH - 19, 6, 3);
+
+    // Small stool next to bed for nurse
+    const stoolX = bedX + bedW + 26;
+    const stoolY = bedY + bedH - 6;
+    c.fillStyle = '#585858';
+    c.fillRect(stoolX, stoolY, 14, 10);
+    c.fillStyle = '#505050';
+    c.fillRect(stoolX + 1, stoolY + 10, 3, 4);
+    c.fillRect(stoolX + 10, stoolY + 10, 3, 4);
+
+    // Fluorescent light strip on ceiling — cool white
+    c.fillStyle = 'rgba(200,210,195,0.12)';
+    c.fillRect(w * 0.3, 4, w * 0.4, 6);
+    // Light glow
+    const lightGrad = c.createRadialGradient(w * 0.5, 0, 5, w * 0.5, h * 0.4, w * 0.45);
+    lightGrad.addColorStop(0, 'rgba(220,228,210,0.06)');
+    lightGrad.addColorStop(1, 'rgba(220,228,210,0)');
+    c.fillStyle = lightGrad;
+    c.fillRect(0, 0, w, h);
+
+    // Doorway at bottom-right — opening in right wall
+    const doorY = h - 60;
+    const doorW = 28;
+    const doorH = 50;
+    // Door opening — darker to suggest hallway beyond
+    c.fillStyle = '#3a3e3a';
+    c.fillRect(w - wallSide - 2, doorY, wallSide + 4, doorH);
+    // Door frame
+    c.fillStyle = '#5a5e58';
+    c.fillRect(w - wallSide - 3, doorY - 2, 3, doorH + 4);
+    c.fillRect(w - wallSide - 3, doorY - 2, wallSide + 5, 3);
+    // Hallway depth hint
+    c.fillStyle = '#444844';
+    c.fillRect(w - wallSide, doorY + 1, wallSide, doorH - 2);
+
+    // Small red cross on back wall — medical marker
+    const crossX = w * 0.5;
+    const crossY = wallH - 28;
+    c.fillStyle = '#8a3030';
+    c.fillRect(crossX - 5, crossY, 10, 3);
+    c.fillRect(crossX - 1.5, crossY - 4, 3, 11);
+
+    // Biohazard bin near door
+    const binX = w - wallSide - 20;
+    const binY = doorY - 18;
+    c.fillStyle = '#8a3535';
+    c.fillRect(binX, binY, 14, 16);
+    c.fillStyle = '#702828';
+    c.fillRect(binX + 1, binY + 1, 12, 3);
+    // Lid
+    c.fillStyle = '#993838';
+    c.fillRect(binX - 1, binY - 2, 16, 3);
+
+    // Floor stains — cleaning marks and old scuffs
+    for (let i = 0; i < 3; i++) {
+      const sx = wallSide + 10 + rng() * (w - wallSide * 2 - 20);
+      const sy = wallH + 10 + rng() * (h - wallH - 20);
+      const radius = 4 + rng() * 8;
+      const grad = c.createRadialGradient(sx, sy, 0, sx, sy, radius);
+      grad.addColorStop(0, `rgba(100,90,70,${0.02 + rng() * 0.03})`);
+      grad.addColorStop(1, 'rgba(100,90,70,0)');
+      c.fillStyle = grad;
+      c.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    }
+
+    // Mop streak marks on floor
+    c.strokeStyle = 'rgba(160,165,155,0.06)';
+    c.lineWidth = 3;
+    for (let i = 0; i < 4; i++) {
+      const mx = wallSide + 20 + rng() * (w - wallSide * 2 - 40);
+      const my = wallH + 30 + rng() * (h - wallH - 60);
+      c.beginPath();
+      c.moveTo(mx, my);
+      c.quadraticCurveTo(mx + 20 + rng() * 30, my + rng() * 20 - 10, mx + 40 + rng() * 40, my + rng() * 15);
+      c.stroke();
+    }
+
+    // Store positions for sprites
+    this.bedX = bedX;
+    this.bedY = bedY;
+    this.bedW = bedW;
+    this.bedH = bedH;
+    this.nurseX = stoolX + 7;
+    this.nurseY = bedY + bedH * 0.3;
+    this.guardX = w - wallSide - 14; // guard stands by door
+    this.guardY = doorY - 4;
+    this.wallH = wallH;
+  }
+
+  draw(ctx) {
+    // Draw zoomed and centered on the canvas
+    const scaleX = CANVAS_W / this.roomW;
+    const scaleY = CANVAS_H / this.roomH;
+    const scale = Math.max(scaleX, scaleY);
+    const dx = (CANVAS_W - this.roomW * scale) / 2;
+    const dy = (CANVAS_H - this.roomH * scale) / 2;
+    ctx.save();
+    ctx.translate(dx, dy);
+    ctx.scale(scale, scale);
+    ctx.drawImage(this.canvas, 0, 0);
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// LIVING CELL — Interactive home cell using hand-drawn art
+// ============================================================
+// Uses artist-made sprites composited with z-axis depth scaling.
+// Art is at 32px character density. Engine scales everything up.
+//
+// Coordinate system:
+//   Y=0 is the BACK wall (far from camera, objects draw smaller)
+//   Y=cellH is the FRONT (bars/door, close to camera, objects draw bigger)
+//   depthScale(y) returns a scale multiplier: ~0.82 at back, 1.0 at front
+//
+class LivingCell {
+  constructor() {
+    // Cell art dimensions (pixels at art density)
+    this.artW = 64;   // cell background width
+    this.artH = 48;   // cell background height
+
+    // World dimensions = art × base scale
+    this.scale = SM().SCALE;  // 2.5 for 32-bit
+    this.worldW = this.artW * this.scale;   // 160
+    this.worldH = this.artH * this.scale;   // 120
+
+    // Camera zoom to fill screen
+    const zoomX = CANVAS_W / this.worldW;
+    const zoomY = CANVAS_H / this.worldH;
+    this.zoom = Math.min(zoomX, zoomY) * 0.92;
+
+    // Depth scaling — z-axis perspective, spread across the full floor range
+    this.depthNear = 1.25;   // bigger up front — character towers over toilet/sink
+    this.depthFar = 0.82;    // smaller at back wall — wider range = more gradual scaling
+
+    // Floor area — narrow strip at bottom of cell, full width
+    this.floorBackY = 44;   // where floor visually starts
+    this.floorFrontY = 60;  // well past bottom edge — characters clip at waist up front
+    this.floorLeftX = 3;    // tight to left wall at floor level
+    this.floorRightX = 61;  // tight to right wall at floor level
+
+    // Furniture definitions — positions are in art pixels
+    // footY = bottom edge of sprite in art pixels
+    // layer: 'back' = always behind characters, 'sort' = Y-sorted with characters
+    this.furniture = {
+      bunk: {
+        assetKey: 'loc_bunk',
+        sprW: 32, sprH: 32,
+        left: 3, top: 11,
+        layer: 'back',
+      },
+      toilet: {
+        assetKey: 'loc_toilet',
+        sprW: 32, sprH: 32,
+        left: 40, top: 28,
+        sortY: 56,
+        layer: 'sort',
+      },
+    };
+
+    // Interactive spots
+    this.spots = {
+      bunk:   { x: 16, y: 24, label: 'BUNK' },
+      toilet: { x: 52, y: 46, label: 'TOILET' },
+      door:   { x: 32, y: 48, label: 'DOOR' },
+    };
+  }
+
+  // Returns depth scale for a given Y in art-pixel space
+  depthScale(artY) {
+    const t = clamp(artY / this.artH, 0, 1);
+    return this.depthFar + (this.depthNear - this.depthFar) * t;
+  }
+
+  // Draw the cell background
+  drawBackground(ctx) {
+    const cellBg = assets['loc_cell'];
+    if (!cellBg) return;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(cellBg, 0, 0, this.artW, this.artH,
+      0, 0, this.worldW, this.worldH);
+  }
+
+  // Draw a furniture piece at its top-left art pixel position, scaled up
+  _drawFurnitureItem(ctx, item) {
+    const sheet = assets[item.assetKey];
+    if (!sheet) return;
+    const dw = item.sprW * this.scale;
+    const dh = item.sprH * this.scale;
+    const dx = item.left * this.scale;
+    const dy = item.top * this.scale;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sheet, 0, 0, item.sprW, item.sprH, dx, dy, dw, dh);
+  }
+
+  // Draw a character — anchored at bottom-center, feet on groundY, depth-scaled by Y
+  _drawChar(ctx, charSheet, frameW, frameH, frame, artX, artY, facingLeft) {
+    if (!charSheet) return;
+
+    // Depth scale: interpolate between depthFar (back) and depthNear (front)
+    const floorRange = this.floorFrontY - this.floorBackY;
+    const t = floorRange > 0 ? clamp((artY - this.floorBackY) / floorRange, 0, 1) : 1;
+    const depthSc = this.depthFar + (this.depthNear - this.depthFar) * t;
+
+    const dw = frameW * this.scale * depthSc;
+    const dh = frameH * this.scale * depthSc;
+    const dx = artX * this.scale;
+    const dy = artY * this.scale; // feet position
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    if (facingLeft) {
+      ctx.translate(dx, dy - dh);
+      ctx.scale(-1, 1);
+      ctx.drawImage(charSheet, frame * frameW, 0, frameW, frameH,
+        -dw / 2, 0, dw, dh);
+    } else {
+      ctx.drawImage(charSheet, frame * frameW, 0, frameW, frameH,
+        dx - dw / 2, dy - dh, dw, dh);
+    }
+    ctx.restore();
+  }
+
+  // Apply/restore camera transform
+  applyCamera(ctx) {
+    const offsetX = (CANVAS_W - this.worldW * this.zoom) / 2;
+    const offsetY = (CANVAS_H - this.worldH * this.zoom) / 2;
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(this.zoom, this.zoom);
+  }
+  restoreCamera(ctx) { ctx.restore(); }
+
+  // Main draw:
+  //  1. Background
+  //  2. 'back' layer furniture (bunk — always behind characters)
+  //  3. Characters and 'sort' furniture, Y-sorted together
+  // characters: array of { x, y (footY in art px), sheet, fw, fh, frame, flip }
+  draw(ctx, characters) {
+    ctx.fillStyle = '#0a0806';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    this.applyCamera(ctx);
+    this.drawBackground(ctx);
+
+    // Draw back-layer furniture first (always behind everything)
+    for (const key in this.furniture) {
+      if (this.furniture[key].layer === 'back') {
+        this._drawFurnitureItem(ctx, this.furniture[key]);
+      }
+    }
+
+    // Build sorted list of characters + 'sort' furniture
+    const sortList = [];
+
+    // Add sortable furniture
+    for (const key in this.furniture) {
+      const item = this.furniture[key];
+      if (item.layer === 'sort') {
+        sortList.push({
+          sortY: item.sortY || (item.top + item.sprH), // use sortY or bottom edge
+          type: 'furniture',
+          item: item
+        });
+      }
+    }
+
+    // Add characters — sortY is their Y position (higher Y = more in front)
+    if (characters) {
+      characters.forEach(ch => {
+        sortList.push({
+          sortY: ch.y,
+          type: 'character',
+          ch: ch
+        });
+      });
+    }
+
+    // Sort: lower sortY draws first (further back / higher on screen)
+    sortList.sort((a, b) => a.sortY - b.sortY);
+
+    for (const entry of sortList) {
+      if (entry.type === 'furniture') {
+        this._drawFurnitureItem(ctx, entry.item);
+      } else {
+        const ch = entry.ch;
+        const f = ch.fighter; // optional Fighter reference for combat effects
+        if (f && (f.state === STATES.KNOCKDOWN || f.state === STATES.KO)) {
+          // Knocked down — flatten sprite
+          ctx.save();
+          const dx = ch.x * this.scale;
+          const dy = ch.y * this.scale;
+          ctx.translate(dx, dy);
+          ctx.scale(1, 0.35);
+          ctx.translate(-dx, -dy);
+          if (f.state === STATES.KO) ctx.globalAlpha = 0.6;
+          else ctx.globalAlpha = 0.8;
+          this._drawChar(ctx, ch.sheet, ch.fw, ch.fh, ch.frame, ch.x, ch.y, ch.flip);
+          ctx.restore();
+        } else if (f && f.hitFlash > 0 && f.hitFlash % 2 === 0) {
+          ctx.save();
+          ctx.filter = 'brightness(3)';
+          this._drawChar(ctx, ch.sheet, ch.fw, ch.fh, ch.frame, ch.x, ch.y, ch.flip);
+          ctx.restore();
+        } else {
+          this._drawChar(ctx, ch.sheet, ch.fw, ch.fh, ch.frame, ch.x, ch.y, ch.flip);
+        }
+      }
+    }
+
+    this.restoreCamera(ctx);
+  }
+}

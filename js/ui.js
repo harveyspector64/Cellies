@@ -458,6 +458,19 @@ function drawRiotHUD(ctx) {
 // ============================================================
 // ANNOUNCEMENTS
 // ============================================================
+// Announcer priority tiers for visual treatment
+const ANNOUNCE_TIER = {
+  // tier 0 = normal, tier 1 = impactful, tier 2 = massive
+  'KNOCKOUT': 2, 'TKO!': 2, 'YARD CHAMPION!': 2, 'DEFEAT': 2, 'LIGHTS OUT': 2,
+  'FIGHT!': 1, 'CELL WAR!': 1, 'FIRST BLOOD': 1, 'ADVANCING': 1,
+  "HE'S HURT!": 1, 'ON FIRE!': 1, 'BACKED UP!': 1, 'ELIMINATED': 1,
+};
+const ANNOUNCE_COLORS = {
+  0: '#c4943a',     // warm gold
+  1: '#e8b040',     // brighter gold
+  2: '#ff4444',     // red for massive moments
+};
+
 class Announcer {
   constructor() {
     this.text = '';
@@ -492,26 +505,56 @@ class Announcer {
     }
     alpha = clamp(alpha, 0, 1);
 
+    const tier = ANNOUNCE_TIER[this.text] || 0;
+    const color = ANNOUNCE_COLORS[tier];
+    const baseSize = tier === 2 ? 38 : tier === 1 ? 34 : 32;
+
+    // Scale punch on appearance — text starts slightly big and settles
+    let scaleMult = 1;
+    if (this.timer < 150) {
+      const punch = 1 - (this.timer / 150);
+      scaleMult = 1 + punch * (tier === 2 ? 0.25 : tier === 1 ? 0.12 : 0);
+    }
+
     ctx.save();
     ctx.globalAlpha = alpha;
-
-    // Main text
-    ctx.fillStyle = '#c4943a';
-    ctx.font = '32px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Text shadow
+    const cx = CANVAS_W / 2;
+    const cy = CANVAS_H / 2;
+
+    // Apply scale punch from center
+    if (scaleMult !== 1) {
+      ctx.translate(cx, cy);
+      ctx.scale(scaleMult, scaleMult);
+      ctx.translate(-cx, -cy);
+    }
+
+    // Glow for tier 2 (big red moments)
+    if (tier === 2) {
+      ctx.shadowColor = '#ff2200';
+      ctx.shadowBlur = 12 + Math.sin(this.timer / 100) * 4;
+    }
+
+    // Main text
+    ctx.font = `${baseSize}px "Press Start 2P", monospace`;
+
+    // Text shadow (thicker for higher tiers)
+    const shadowOff = tier >= 1 ? 3 : 2;
     ctx.fillStyle = '#1a0a00';
-    ctx.fillText(this.text, CANVAS_W / 2 + 2, CANVAS_H / 2 + 2);
-    ctx.fillStyle = '#c4943a';
-    ctx.fillText(this.text, CANVAS_W / 2, CANVAS_H / 2);
+    ctx.fillText(this.text, cx + shadowOff, cy + shadowOff);
+    ctx.fillStyle = color;
+    ctx.fillText(this.text, cx, cy);
+
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
 
     // Subtext
     if (this.subtext) {
       ctx.font = '10px "Press Start 2P", monospace';
       ctx.fillStyle = '#8a7a5a';
-      ctx.fillText(this.subtext, CANVAS_W / 2, CANVAS_H / 2 + 30);
+      ctx.fillText(this.subtext, cx, cy + 35);
     }
 
     ctx.restore();

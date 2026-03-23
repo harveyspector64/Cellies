@@ -458,5 +458,116 @@ const SFX = {
     gain.connect(this.masterGain);
     noise.start(now);
     noise.stop(now + 0.08);
+  },
+
+  // Menu ambience — very quiet, distant, muffled prison atmosphere
+  _menuAmbienceNode: null,
+  _menuAmbienceGain: null,
+
+  startMenuAmbience() {
+    if (!this.initialized || this.muted) return;
+    this.stopMenuAmbience();
+    const ctx = this.ctx;
+
+    this._menuAmbienceGain = ctx.createGain();
+    this._menuAmbienceGain.gain.value = 0.015; // very quiet
+    this._menuAmbienceGain.connect(this.masterGain);
+
+    // Brown noise through heavy low-pass — distant, muffled
+    const secs = 3;
+    const bufLen = ctx.sampleRate * secs;
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < bufLen; i++) {
+      const white = Math.random() * 2 - 1;
+      last = (last + (0.02 * white)) / 1.02;
+      data[i] = last * 3.5;
+    }
+    this._menuAmbienceNode = ctx.createBufferSource();
+    this._menuAmbienceNode.buffer = buf;
+    this._menuAmbienceNode.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 150; // very muffled — like hearing it through walls
+    filter.Q.value = 0.3;
+
+    this._menuAmbienceNode.connect(filter);
+    filter.connect(this._menuAmbienceGain);
+    this._menuAmbienceNode.start();
+  },
+
+  stopMenuAmbience() {
+    if (this._menuAmbienceNode) {
+      try { this._menuAmbienceNode.stop(); } catch(e) {}
+      this._menuAmbienceNode = null;
+    }
+    if (this._menuAmbienceGain) {
+      this._menuAmbienceGain.disconnect();
+      this._menuAmbienceGain = null;
+    }
+  },
+
+  // Heavy door slam — transition sound
+  doorSlam() {
+    if (!this.initialized || this.muted) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    // Low thud impact
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(0.3, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc.connect(oscGain);
+    oscGain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.35);
+
+    // Metallic rattle overlay
+    const bufLen = ctx.sampleRate * 0.15;
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) {
+      const t = i / bufLen;
+      data[i] = (Math.random() * 2 - 1) * (1 - t) * 0.5;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const nGain = ctx.createGain();
+    nGain.gain.setValueAtTime(0.12, now);
+    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 600;
+    bp.Q.value = 2;
+    noise.connect(bp);
+    bp.connect(nGain);
+    nGain.connect(this.masterGain);
+    noise.start(now);
+    noise.stop(now + 0.2);
+  },
+
+  // Buzzer — harsh alarm tone for round starts / alerts
+  buzzer() {
+    if (!this.initialized || this.muted) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 180;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.setValueAtTime(0.08, now + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.4);
   }
 };

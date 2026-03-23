@@ -29,6 +29,16 @@ class Camera {
       this.shakeDirY = dirY / len;
     }
   }
+  // Distance-scaled shake — events far from camera center shake less
+  shakeAt(intensity, duration, dirX, dirY, worldX, worldY) {
+    const falloff = T('CAMERA_RIOT_SHAKE_FALLOFF', 200);
+    const minScale = T('CAMERA_RIOT_SHAKE_MIN', 0.1);
+    const camCenterX = this.targetX;
+    const camCenterY = this.targetY;
+    const d = Math.hypot(worldX - camCenterX, worldY - camCenterY);
+    const scale = Math.max(minScale, 1 - d / falloff);
+    this.shake(intensity * scale, duration * scale, dirX, dirY);
+  }
   zoomPunch(amount, duration) {
     this.zoomPunchAmount = amount;
     this.zoomPunchTimer = 0;

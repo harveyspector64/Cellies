@@ -5,7 +5,7 @@
 // MODE CONFIGURATION
 // ============================================================
 
-let spriteMode = '16'; // '16' or '32' — toggled from menu
+let spriteMode = '32'; // '16' or '32' — toggled from menu (default: 32-bit)
 
 // Active mode accessor — call SM() anywhere to get current config
 function SM() { return SPRITE_MODES[spriteMode]; }
@@ -45,6 +45,11 @@ const SPRITE_MODES = {
       'i06l_hit':    'inmate06_latino01_east_gethit-Sheet.png',
       'i06b_walk':   'inmate06_black03_east_walk-Sheet.png',
       'yard':        'yard64.png',
+      // Nurse & guard (lives in new_art_32 — use full path)
+      'nurse_idle':  'new_art_32/nurse01_white01_idle1_south-Sheet.png',
+      'nurse_check': 'new_art_32/nurse01_white01_CheckPatient-Sheet.png',
+      'nurse_walk':  'new_art_32/nurse01_white01_Walk-Sheet.png',
+      'guard_idle':  'new_art_32/guard01_white01_idle1_south-Sheet.png',
     },
     charDefs: {
       surenos: [
@@ -154,8 +159,18 @@ const SPRITE_MODES = {
       'nor32_block':      'inmate04_latino01_Block-Sheet.png',
       'nor32_idle':       'inmate04_latino01_idle1_southNorteno-Sheet.png',
       'nor32_celebrate':  'inmate04_latino01_Celebrate_Norteno-Sheet.png',
+      // Nurse & guard
+      'nurse_idle':       'nurse01_white01_idle1_south-Sheet.png',
+      'nurse_check':      'nurse01_white01_CheckPatient-Sheet.png',
+      'nurse_walk':       'nurse01_white01_Walk-Sheet.png',
+      'guard_idle':       'guard01_white01_idle1_south-Sheet.png',
       // Environment
       'yard':             '../yard64.png',
+      // Locations — interactive cell art
+      'loc_cell':         'locations_cell01-Sheet.png',
+      'loc_bunk':         'locations_bunkbeds01-Sheet.png',
+      'loc_toilet':       'locations_toiletsink01_sheet.png',
+      'loc_bed':          'locations_bed01-Sheet.png',
     },
     charDefs: {
       surenos: [
